@@ -1097,16 +1097,16 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
               {!isLast&&<button onClick={()=>setStep(step+1)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Next<ChevronRight className="w-4 h-4"/></button>}
               {isLast&&!fromSession&&<button onClick={goToMenu} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}><CheckCircle2 className="w-4 h-4"/>Done — Back to Guides</button>}
               {isLast&&fromSession&&(
-                <div className="flex-1 flex flex-col gap-2">
-                  <button onClick={()=>setSection("calibration")} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
-                    <ArrowRight className="w-4 h-4"/>Next: Calibration Guide
-                  </button>
-                  <button onClick={handleExit} className="w-full h-10 rounded-2xl border-2 border-gray-200 bg-white font-semibold text-sm text-gray-600 flex items-center justify-center gap-2">
-                    Back to Setup
-                  </button>
-                </div>
+                <button onClick={()=>setSection("calibration")} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+                  <ArrowRight className="w-4 h-4"/>Next: Calibration Guide
+                </button>
               )}
             </div>
+            {isLast&&fromSession&&(
+              <button onClick={handleExit} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 mt-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
+                <CheckCircle2 className="w-4 h-4"/>Done — Back to Setup
+              </button>
+            )}
           </Card>
         </div>
         <BottomNav current={fromSession?"start-session":"guides"} onNav={k=>k==="guides"?(fromSession?handleExit():goToMenu()):onNav(k)}/>
