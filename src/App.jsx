@@ -945,7 +945,7 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Confirm sensations</p>
             {[
               {state:electrode,set:setElectrode,label:"Tingling at electrode site",sub:"First sensation where the electrode touches the skin",num:1,prev:true},
-              {state:spread,set:setSpread,label:"Heel and/or Foot/Toes sensation",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
+              {state:spread,set:setSpread,label:"Tingling migrates to heel and/or toes",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
             ].map(({state,set,label,sub,num,prev})=>(
               <button key={num} disabled={!prev} onClick={()=>prev&&set(!state)} className="flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all" style={{opacity:!prev?0.4:1,cursor:!prev?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
                 <Checkbox checked={state} onChange={prev?set:()=>{}}/>
