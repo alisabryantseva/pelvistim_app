@@ -1075,7 +1075,7 @@ function CompleteScreen({onHome,startTime,endTime,onNav,use24}){
 function PelvicFloorIllustration(){
   return (
     <img
-      src={pelvicFloorDiagramImg}
+      src={ankleDeviceImg}
       alt="Pelvic floor anatomy diagram"
       className="w-full h-auto rounded-xl"
     />
@@ -1138,7 +1138,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
             {step===1&&(
               <div className="my-5 rounded-2xl overflow-hidden border-2 border-gray-100">
                 <img
-                  src={ankleDeviceImg}
+                  src={pelvicFloorDiagramImg}
                   alt="Device band with ring positioned over the inside ankle bone (medial malleolus)"
                   className="w-full object-cover"
                   style={{maxHeight:260}}
