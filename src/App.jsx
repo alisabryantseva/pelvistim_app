@@ -167,7 +167,7 @@ function Toggle({checked,onChange}){
   );
 }
 
-function IntensityStepper({value,onChange,min=1,max=10,disabled=false,large=false}){
+function IntensityStepper({value,onChange,min=0,max=10,disabled=false,large=false}){
   const dec=()=>{const n=roundHalf(value-0.5);if(n>=min)onChange(n);};
   const inc=()=>{const n=roundHalf(value+0.5);if(n<=max)onChange(n);};
   return(
@@ -221,21 +221,27 @@ function BottomNav({current,onNav}){
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const INCONTINENCE_SUBTYPES={
-  urge:{label:"Urge Incontinence",Icon:UrgencyIcon,desc:"Sudden strong urge to urinate followed by leakage",accent:C.cyan},
-  overflow:{label:"Overflow Incontinence",Icon:CupIcon,desc:"Frequent small leaks from a bladder that doesn't empty fully",accent:C.mint},
+  urge:{label:"Urge Incontinence",Icon:UrgencyIcon,desc:"Leakage associated with a sudden, hard-to-delay urge to urinate",accent:C.cyan},
+  urgency:{label:"Urinary Urgency",Icon:AlertCircle,desc:"Sudden, strong urge to urinate that is difficult to defer",accent:C.cyanDark},
+  frequency:{label:"Urinary Frequency",Icon:Clock,desc:"Needing to urinate more often than usual during the day",accent:C.navy},
+  hesitancy:{label:"Urinary Hesitancy / Difficulty Emptying",Icon:Timer,desc:"Trouble starting urine flow or feeling incompletely emptied",accent:C.mint},
   fecal:{label:"Fecal Incontinence",Icon:FecalIcon,desc:"Difficulty controlling bowel movements",accent:C.peachDark},
-  constipation:{label:"Constipation",Icon:ConstipationIcon,desc:"Infrequent or difficult bowel movements due to pelvic floor tension",accent:"#e08040"},
+  constipation:{label:"Constipation",Icon:ConstipationIcon,desc:"Infrequent or difficult bowel movements, often from slow colonic motility or idiopathic causes",accent:"#e08040"},
+  pelvicPain:{label:"Pelvic Pain",Icon:Heart,desc:"Persistent pain or discomfort in the pelvic region",accent:"#ec4899"},
 };
 
 const PSEUDODIAGNOSIS={
   urge:{title:"Overactive Bladder (OAB)",bg:"#e8f9fb",border:`2px solid ${C.cyan}40`,text:C.cyanDark,body:"Your symptoms are consistent with overactive bladder, where bladder muscles contract unexpectedly. Neuromodulation is highly effective for this pattern — most patients see 50–70% reduction in urge episodes after 8 weeks."},
-  overflow:{title:"Overflow Incontinence",bg:"#e8faf4",border:`2px solid ${C.mint}40`,text:C.mintDark,body:"Your pattern suggests overflow incontinence, often linked to an underactive bladder. Neuromodulation can help restore the bladder's signaling cycle. Please confirm with your provider."},
+  urgency:{title:"Urinary Urgency Pattern",bg:"#e8f9fb",border:`2px solid ${C.cyan}40`,text:C.cyanDark,body:"Your pattern suggests urgency-predominant bladder symptoms. Tibial neuromodulation is commonly used to reduce urgency intensity and improve bladder control over time."},
+  frequency:{title:"Urinary Frequency Pattern",bg:"#eef2ff",border:"2px solid #6366f140",text:"#3730a3",body:"Your symptoms suggest urinary frequency. Neuromodulation may help normalize bladder signaling so trips to the bathroom become less frequent."},
+  hesitancy:{title:"Voiding Dysfunction Pattern",bg:"#e8faf4",border:`2px solid ${C.mint}40`,text:C.mintDark,body:"Your symptoms suggest hesitancy or incomplete emptying. Please discuss these symptoms with your clinician to confirm fit for this therapy and rule out obstruction."},
   fecal:{title:"Fecal Incontinence / Bowel Dysfunction",bg:"#fff7ed",border:"2px solid #f5a85a40",text:"#c2610a",body:"Your symptoms are consistent with fecal incontinence. Tibial nerve stimulation has shown promising results for bowel dysfunction, with treatment protocols that may overlap with urinary symptoms."},
-  constipation:{title:"Pelvic Floor Constipation",bg:"#fffbeb",border:"2px solid #e0804040",text:"#b45309",body:"Your symptoms suggest constipation related to pelvic floor muscle tension — muscles too tight to relax during bowel movements. Neuromodulation helps regulate this nerve signaling."},
+  constipation:{title:"Constipation Pattern",bg:"#fffbeb",border:"2px solid #e0804040",text:"#b45309",body:"Your symptoms suggest constipation, which may be associated with slow colonic motility or idiopathic bowel dysfunction. Neuromodulation may support bowel regularity in select cases."},
+  pelvicPain:{title:"Pelvic Pain Pattern",bg:"#fdf2f8",border:"2px solid #ec489940",text:"#be185d",body:"Your symptoms include pelvic pain. Please review this with your clinician, as pelvic pain can have multiple causes and may require additional evaluation."},
 };
 
 function getPrimaryDiagnosis(pfdTypes){
-  const p=["urge","overflow","fecal","constipation"];
+  const p=["urge","urgency","frequency","hesitancy","fecal","constipation","pelvicPain"];
   for(const k of p){if(pfdTypes?.[k])return k;}
   return null;
 }
@@ -455,14 +461,14 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
   const weekEntries=diaryEntries.filter(e=>e.weekKey===thisWeek);
   const completedDays=weekEntries.filter(e=>e.completed);
   const [activeDay,setActiveDay]=useState(null);
-  const [form,setForm]=useState({urgencyEpisodes:0,leakageEpisodes:0});
+  const [form,setForm]=useState({urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
 
   const ws=startOfWeek(today);
   const weekDays=Array.from({length:7},(_,i)=>addDays(ws,i));
 
   const openDay=(day)=>{
     const existing=weekEntries.find(e=>sameDay(e.date,day));
-    setForm(existing?{urgencyEpisodes:existing.urgencyEpisodes,leakageEpisodes:existing.leakageEpisodes||0}:{urgencyEpisodes:0,leakageEpisodes:0});
+    setForm(existing?{urgencyEpisodes:existing.urgencyEpisodes,leakageEpisodes:existing.leakageEpisodes||0,daytimeVoids:existing.daytimeVoids||0,nighttimeVoids:existing.nighttimeVoids||0}:{urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
     setActiveDay(day);
   };
 
@@ -482,8 +488,10 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
     const avg={
       urgencyEpisodes:completedDays.reduce((s,e)=>s+e.urgencyEpisodes,0)/completedDays.length,
       leakageEpisodes:completedDays.reduce((s,e)=>s+(e.leakageEpisodes||0),0)/completedDays.length,
+      daytimeVoids:completedDays.reduce((s,e)=>s+(e.daytimeVoids||0),0)/completedDays.length,
+      nighttimeVoids:completedDays.reduce((s,e)=>s+(e.nighttimeVoids||0),0)/completedDays.length,
     };
-    return{perWeek:{urgencyEpisodes:avg.urgencyEpisodes*7,leakageEpisodes:avg.leakageEpisodes*7}};
+    return{perWeek:{urgencyEpisodes:avg.urgencyEpisodes*7,leakageEpisodes:avg.leakageEpisodes*7,daytimeVoids:avg.daytimeVoids*7,nighttimeVoids:avg.nighttimeVoids*7}};
   },[completedDays]);
 
   const trendData=useMemo(()=>{
@@ -578,6 +586,40 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
                 <button onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg" style={{background:`${C.navy}15`,color:C.navy}}>+</button>
               </div>
             </div>
+
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.mint}15`}}>
+                  <Clock className="w-5 h-5" style={{color:C.mintDark}}/>
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Daytime Voids</div>
+                  <div className="text-[10px] text-gray-400"># of times urinating during daytime</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg">−</button>
+                <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.mintDark}}>{form.daytimeVoids}</span>
+                <button onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg" style={{background:`${C.mint}20`,color:C.mintDark}}>+</button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f3f4f6"}}>
+                  <Clock className="w-5 h-5 text-gray-600"/>
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Nighttime Voids</div>
+                  <div className="text-[10px] text-gray-400"># of times urinating from bedtime to wake time</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg">−</button>
+                <span className="text-2xl font-black w-8 text-center tabular-nums text-gray-700">{form.nighttimeVoids}</span>
+                <button onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg bg-gray-200 text-gray-700">+</button>
+              </div>
+            </div>
           </Card>
         )}
 
@@ -592,6 +634,14 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
                 <div className="text-2xl font-black" style={{color:C.navy}}>{extrapolated.perWeek.leakageEpisodes.toFixed(1)}</div>
                 <div className="text-[10px] text-gray-500 mt-0.5">Leakage episodes/wk</div>
+              </div>
+              <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+                <div className="text-2xl font-black" style={{color:C.mintDark}}>{extrapolated.perWeek.daytimeVoids.toFixed(1)}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Daytime voids/wk</div>
+              </div>
+              <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+                <div className="text-2xl font-black text-gray-700">{extrapolated.perWeek.nighttimeVoids.toFixed(1)}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Nighttime voids/wk</div>
               </div>
             </div>
           </Card>
@@ -636,6 +686,8 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
                   <div className="flex gap-4 text-xs text-gray-500">
                     <span className="flex items-center gap-1.5"><UrgencyIcon className="w-3.5 h-3.5" style={{color:C.cyan}}/>{e.urgencyEpisodes} urgency</span>
                     <span className="flex items-center gap-1.5"><CupIcon className="w-3.5 h-3.5" style={{color:C.navy}}/>{e.leakageEpisodes||0} leakage</span>
+                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" style={{color:C.mintDark}}/>{e.daytimeVoids||0} daytime</span>
+                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-gray-500"/>{e.nighttimeVoids||0} nighttime</span>
                   </div>
                 </Card>
               ))}
@@ -865,9 +917,8 @@ function UnifiedCalendar({onBack,onNav,sessions,diaryEntries,use24}){
 function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGuide,onNav}){
   const [intensity,setIntensity]=useState(1.0);
   const [electrode,setElectrode]=useState(false);
-  const [heel,setHeel]=useState(false);
-  const [foot,setFoot]=useState(false);
-  const canContinue=electrode&&heel&&foot;
+  const [spread,setSpread]=useState(false);
+  const canContinue=electrode&&spread;
   return(
     <div className={cn("min-h-screen pb-28",BG)}>
       <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] p-5">
@@ -885,16 +936,15 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
           </div>
 
           <div className="flex flex-col items-center py-4">
-            <span className="text-sm font-semibold text-gray-500 mb-4">Stimulation Intensity</span>
+            <span className="text-sm font-semibold text-gray-500 mb-4">Stimulation Intensity (0-10)</span>
             <IntensityStepper value={intensity} onChange={setIntensity} large/>
           </div>
-          {intensity>=10&&<div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex gap-2"><AlertCircle className="w-4 h-4 mt-0.5 shrink-0"/>Reposition electrodes if no sensation at max intensity.</div>}
+          {intensity>=10&&<div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex gap-2"><AlertCircle className="w-4 h-4 mt-0.5 shrink-0"/>Reposition the band higher or lower if no sensation at max intensity.</div>}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Confirm sensations in order</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Confirm sensations</p>
             {[
-              {state:electrode,set:setElectrode,label:"Tingling at electrode site",sub:"First sensation at the skin contact point",num:1,prev:true},
-              {state:heel,set:setHeel,label:"Tingling migrates to heel",sub:"Sensation travels downward as intensity rises",num:2,prev:electrode},
-              {state:foot,set:setFoot,label:"Sensation reaches toes / foot",sub:"You may feel your toes curling or a warmth spreading to the foot",num:3,prev:heel},
+              {state:electrode,set:setElectrode,label:"Tingling at electrode site",sub:"First sensation where the electrode touches the skin",num:1,prev:true},
+              {state:spread,set:setSpread,label:"Heel and/or Foot/Toes sensation",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
             ].map(({state,set,label,sub,num,prev})=>(
               <button key={num} disabled={!prev} onClick={()=>prev&&set(!state)} className="flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all" style={{opacity:!prev?0.4:1,cursor:!prev?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
                 <Checkbox checked={state} onChange={prev?set:()=>{}}/>
@@ -925,10 +975,10 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav}){
   const [selected,setSelected]=useState("default");
   const [showCustom,setShowCustom]=useState(false);
   const [dur,setDur]=useState("30");
-  const [freq,setFreq]=useState("20");
+  const [freq,setFreq]=useState("10");
   const [intensity,setIntensity]=useState(initialIntensity);
   const pinned=presets.filter(p=>p.isPinned);
-  const handleStart=()=>{if(showCustom)onStart(parseInt(dur)||30,parseInt(freq)||20,intensity);else if(selected==="default")onStart(30,20,intensity);else{const p=presets.find(p=>p.id===selected);if(p)onStart(p.duration,p.frequency,intensity);}};
+  const handleStart=()=>{if(showCustom)onStart(parseInt(dur)||30,parseInt(freq)||10,intensity);else if(selected==="default")onStart(30,10,intensity);else{const p=presets.find(p=>p.id===selected);if(p)onStart(p.duration,p.frequency,intensity);}};
   return(
     <div className={cn("min-h-screen pb-28",BG)}>
       <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] p-5">
@@ -940,7 +990,7 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav}){
           </div>
           <div><span className="text-sm font-bold text-gray-500 block mb-2">Quick Start</span>
             <button onClick={()=>{setSelected("default");setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all" style={{borderColor:selected==="default"&&!showCustom?C.cyan:"#e5e7eb",background:selected==="default"&&!showCustom?"#e8f9fb":"white"}}>
-              <div className="flex items-center justify-between"><div><span className="font-bold text-sm">Standard Session</span><span className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:`${C.cyan}20`,color:C.cyanDark}}>Default</span><p className="text-xs text-gray-400 mt-1">30 min · 20 Hz</p></div>{selected==="default"&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div>
+              <div className="flex items-center justify-between"><div><span className="font-bold text-sm">Standard Session</span><span className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:`${C.cyan}20`,color:C.cyanDark}}>Default</span><p className="text-xs text-gray-400 mt-1">30 min · 10 Hz</p></div>{selected==="default"&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div>
             </button>
           </div>
           {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
@@ -1129,9 +1179,9 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
           <div className="rounded-xl p-5 space-y-3 mb-5" style={{background:"#e8f9fb"}}>
             <h3 className="font-bold text-sm mb-2">Sensations should appear in this order:</h3>
             {[
-              {n:1,t:"Electrode Site",d:"Tingling begins exactly where the device touches the skin on your ankle",c:C.cyan},
+              {n:1,t:"Electrode Site",d:"Tingling begins exactly where the electrode touches the skin on your ankle",c:C.cyan},
               {n:2,t:"Heel",d:"Sensation migrates downward toward your heel as intensity rises",c:C.cyanDark},
-              {n:3,t:"Toes / Foot",d:"Correct placement confirmed — you may feel your toes curling or a warm sensation spreading through your foot",c:C.navy},
+              {n:3,t:"Foot / Toes",d:"You may feel tingling spread along bottom side of foot along the arch and into the toes. When intensity is higher, you may notice your toes curl",c:C.navy},
             ].map(({n,t,d,c})=>(
               <div key={n} className="flex items-start gap-3"><span className="h-6 w-6 rounded-full text-xs flex items-center justify-center font-black shrink-0 mt-0.5 text-white" style={{background:c}}>{n}</span><div><p className="text-sm font-bold">{t}</p><p className="text-xs text-gray-600">{d}</p></div></div>
             ))}
@@ -1139,9 +1189,10 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
           <div className="rounded-xl p-4 mb-5" style={{background:"#fffbeb",border:"1px solid #fde68a"}}>
             <h3 className="font-bold text-sm text-amber-800 mb-2">Important</h3>
             <ul className="text-xs text-amber-700 space-y-1.5">
-              <li>• Reposition the band if you feel nothing even at high intensity</li>
+              <li>• Reposition the band higher or lower if you feel nothing even at high intensity</li>
+              <li>• If sensation is only in the heel, that can still be okay</li>
               <li>• Reduce intensity immediately if anything feels painful or uncomfortable</li>
-              <li>• Contact your provider if you cannot achieve sensation</li>
+              <li>• Contact the manufacturer if you cannot achieve sensation</li>
             </ul>
           </div>
           <button onClick={handleExit} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
@@ -1201,12 +1252,13 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets}){
   const [tab,setTab]=useState("profile");
   const [form,setForm]=useState(settings);
   const [saved,setSaved]=useState(false);
-  const [pName,setPName]=useState("");const [pDur,setPDur]=useState("30");const [pFreq,setPFreq]=useState("20");
+  const [pName,setPName]=useState("");const [pDur,setPDur]=useState("30");const [pFreq,setPFreq]=useState("10");
   const handleSave=()=>{onSave(form);setSaved(true);setTimeout(()=>setSaved(false),2000);};
-  const addPreset=()=>{if(!pName.trim())return;onUpdatePresets([...presets,{id:Date.now().toString(),name:pName.trim(),duration:parseInt(pDur)||30,frequency:parseInt(pFreq)||20,isPinned:false}]);setPName("");setPDur("30");setPFreq("20");};
+  const addPreset=()=>{if(!pName.trim())return;onUpdatePresets([...presets,{id:Date.now().toString(),name:pName.trim(),duration:parseInt(pDur)||30,frequency:parseInt(pFreq)||10,isPinned:false}]);setPName("");setPDur("30");setPFreq("10");};
   const primaryDx=getPrimaryDiagnosis(form.pfdTypes||{});
   const dx=primaryDx?PSEUDODIAGNOSIS[primaryDx]:null;
   const EDUCATION_LEVELS=["Prefer not to say","Less than high school","High school / GED","Some college","Associate's degree","Bachelor's degree","Graduate degree"];
+  const RACE_ETHNICITY_OPTIONS=["Prefer not to say","American Indian or Alaska Native","Asian","Black or African American","Hispanic or Latino","Middle Eastern or North African","Native Hawaiian or Other Pacific Islander","White","Multiracial"];
 
   const toggle24=(v)=>{ const nf={...form,use24:v}; setForm(nf); onSave(nf); };
 
@@ -1229,8 +1281,11 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets}){
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Age</label><input type="number" min="0" max="120" value={form.age||""} onChange={e=>setForm({...form,age:Math.max(0,parseInt(e.target.value)||0)})} placeholder="Age" className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Weight (lbs)</label><input type="number" min="0" value={form.weight||""} onChange={e=>setForm({...form,weight:Math.max(0,parseInt(e.target.value)||0)})} placeholder="Weight" className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
               </div>
-              <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Gender</label><select value={form.gender||""} onChange={e=>setForm({...form,gender:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Other / Prefer not to say</option></select></div>
-              <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Education Level</label><select value={form.education||""} onChange={e=>setForm({...form,education:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{EDUCATION_LEVELS.map(l=><option key={l}>{l}</option>)}</select></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Gender</label><select value={form.gender||""} onChange={e=>setForm({...form,gender:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Other / Prefer not to say</option></select></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Education Level</label><select value={form.education||""} onChange={e=>setForm({...form,education:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{EDUCATION_LEVELS.map(l=><option key={l}>{l}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Race / Ethnicity</label><select value={form.raceEthnicity||""} onChange={e=>setForm({...form,raceEthnicity:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{RACE_ETHNICITY_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
+              </div>
 
               <div className="flex items-center justify-between p-3 rounded-xl" style={{background:"#f8fafc",border:"1.5px solid #e5e7eb"}}>
                 <div><p className="text-sm font-bold text-gray-700">Time Format</p><p className="text-xs text-gray-400">Used in Schedule and sessions</p></div>
@@ -1336,13 +1391,13 @@ export default function App(){
   ]);
   const [intensity,setIntensity]=useState(5.0);
   const [duration,setDuration]=useState(30);
-  const [frequency,setFrequency]=useState(20);
+  const [frequency,setFrequency]=useState(10);
   const [lastStart,setLastStart]=useState(new Date());
   const [lastEnd,setLastEnd]=useState(new Date());
   const [guidesInit,setGuidesInit]=useState("menu");
   const [pausedSession,setPausedSession]=useState(null);
   const [activeReminder,setActiveReminder]=useState(null);
-  const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",use24:false,pfdTypes:{urge:false,overflow:false,fecal:false,constipation:false}});
+  const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",raceEthnicity:"",use24:false,pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,fecal:false,constipation:false,pelvicPain:false}});
 
   const use24=settings.use24||false;
 
