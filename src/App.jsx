@@ -539,20 +539,21 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
               const future=isAfterDay(day,today);
               const disabled=!inMonth||future;
               const entry=monthEntries.find(e=>sameDay(e.date,day));
+              const hasEntry=!!entry;
               const isToday=sameDay(day,today);
               const isActive=activeDay&&sameDay(day,activeDay);
               return(
                 <button key={i} disabled={disabled} onClick={()=>!disabled&&openDay(day)}
                   className="aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] transition-all relative border-2"
                   style={{
-                    opacity:inMonth?1:0.25,
+                    opacity:!inMonth?0.25:future?0.55:1,
                     cursor:disabled?"default":"pointer",
-                    borderColor:isActive?C.navy:entry?C.mint:isToday?C.cyan:"#e5e7eb",
-                    background:isActive?C.navy:entry?"#e8faf4":isToday?"#e8f9fb":"white",
-                    color:isActive?"white":entry?C.mintDark:isToday?C.cyanDark:"#374151",
+                    borderColor:isActive?C.navy:future?"#d1d5db":hasEntry?C.cyan:isToday?C.cyan:"#e5e7eb",
+                    background:isActive?C.navy:future?"#f3f4f6":hasEntry?`${C.cyan}20`:isToday?"#e8f9fb":"white",
+                    color:isActive?"white":future?"#9ca3af":hasEntry?C.cyanDark:isToday?C.cyanDark:"#374151",
                   }}>
                   {day.getDate()}
-                  {entry&&!isActive&&<div className="absolute bottom-1 h-1.5 w-1.5 rounded-full" style={{background:C.mint}}/>}
+                  {entry&&!isActive&&!future&&<div className="absolute bottom-1 h-1.5 w-1.5 rounded-full" style={{background:C.cyan}}/>}
                 </button>
               );
             })}
