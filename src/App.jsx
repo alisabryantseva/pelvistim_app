@@ -458,13 +458,22 @@ function AlarmCard({a,onEdit,onToggle,onDelete,formatSchedule,use24}){
 // ─── Voiding Diary ────────────────────────────────────────────────────────────
 function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
   const today=new Date();
-  const thisWeek=getWeekKey(today);
-  const weekEntries=diaryEntries.filter(e=>e.weekKey===thisWeek);
-  const completedDays=weekEntries.filter(e=>e.completed);
+  const ws=startOfWeek(today);
+  const we=endOfWeek(today);
+  const ms=startOfMonth(today);
+  const me=endOfMonth(today);
+  const daysInMonth=me.getDate();
+  const weekEntries=diaryEntries.filter(e=>{
+    const d=new Date(e.date);
+    return d>=ws&&d<=we;
+  });
+  const completedDays=diaryEntries.filter(e=>{
+    const d=new Date(e.date);
+    return e.completed&&d>=ms&&d<=me;
+  });
   const [activeDay,setActiveDay]=useState(null);
   const [form,setForm]=useState({urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
 
-  const ws=startOfWeek(today);
   const weekDays=Array.from({length:7},(_,i)=>addDays(ws,i));
 
   const openDay=(day)=>{
@@ -477,8 +486,8 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
     const newForm={...form,[field]:Math.max(0,val)};
     setForm(newForm);
     if(activeDay){
-      const existing=weekEntries.find(e=>sameDay(e.date,activeDay));
-      const entry={id:existing?existing.id:Date.now().toString(),weekKey:thisWeek,date:new Date(activeDay),completed:true,...newForm};
+      const existing=diaryEntries.find(e=>sameDay(e.date,activeDay));
+      const entry={id:existing?existing.id:Date.now().toString(),weekKey:getWeekKey(activeDay),date:new Date(activeDay),completed:true,...newForm};
       if(existing)onSaveDiary(diaryEntries.map(e=>e.id===existing.id?entry:e));
       else onSaveDiary([...diaryEntries,entry]);
     }
@@ -492,14 +501,20 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
       daytimeVoids:completedDays.reduce((s,e)=>s+(e.daytimeVoids||0),0)/completedDays.length,
       nighttimeVoids:completedDays.reduce((s,e)=>s+(e.nighttimeVoids||0),0)/completedDays.length,
     };
-    return{perWeek:{urgencyEpisodes:avg.urgencyEpisodes*7,leakageEpisodes:avg.leakageEpisodes*7,daytimeVoids:avg.daytimeVoids*7,nighttimeVoids:avg.nighttimeVoids*7}};
-  },[completedDays]);
+    return{
+      perMonth:{urgencyEpisodes:avg.urgencyEpisodes*daysInMonth,leakageEpisodes:avg.leakageEpisodes*daysInMonth,daytimeVoids:avg.daytimeVoids*daysInMonth,nighttimeVoids:avg.nighttimeVoids*daysInMonth},
+    };
+  },[completedDays,daysInMonth]);
 
   const trendData=useMemo(()=>{
     return Array.from({length:4},(_,i)=>{
       const wStart=addDays(ws,-(3-i)*7);
-      const wk=getWeekKey(wStart);
-      const entries=diaryEntries.filter(e=>e.weekKey===wk&&e.completed);
+      const wEnd=addDays(wStart,6);
+      wEnd.setHours(23,59,59,999);
+      const entries=diaryEntries.filter(e=>{
+        const d=new Date(e.date);
+        return e.completed&&d>=wStart&&d<=wEnd;
+      });
       if(entries.length>0){
         return{label:i===3?"Now":`-${3-i}w`,leaks:entries.reduce((s,e)=>s+(e.leakageEpisodes||0),0)/entries.length,urgency:entries.reduce((s,e)=>s+e.urgencyEpisodes,0)/entries.length};
       }
@@ -510,11 +525,11 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
   return(
     <div className={cn("min-h-screen pb-28",BG)}>
       <div className="max-w-2xl mx-auto p-6 space-y-5">
-        <div><h1 className="text-2xl font-bold tracking-tight">Voiding Diary</h1><p className="text-sm text-gray-500">Track any 3 days this week — we extrapolate the rest</p></div>
+        <div><h1 className="text-2xl font-bold tracking-tight">Voiding Diary</h1><p className="text-sm text-gray-500">Track at least 3 days this month — we extrapolate the rest</p></div>
 
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-bold">This Week</span>
+            <span className="text-sm font-bold">This Month</span>
             <span className="text-xs font-bold px-3 py-1 rounded-full" style={{background:completedDays.length>=3?"#e8faf4":"#e8f9fb",color:completedDays.length>=3?C.mintDark:C.cyanDark}}>{completedDays.length}/3 days logged</span>
           </div>
           <div className="grid grid-cols-7 gap-1.5">
@@ -626,23 +641,23 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
 
         {extrapolated&&(
           <Card className="p-5" style={{background:"linear-gradient(135deg, #e8f9fb, #e8faf4)",borderColor:`${C.cyan}30`,borderWidth:2}}>
-            <div className="flex items-center gap-2 mb-3"><Sparkles className="w-4 h-4" style={{color:C.cyan}}/><span className="font-bold text-sm">Weekly Estimate</span><span className="text-[10px] text-gray-400 ml-auto">From {completedDays.length} day{completedDays.length>1?"s":""}</span></div>
+            <div className="flex items-center gap-2 mb-3"><Sparkles className="w-4 h-4" style={{color:C.cyan}}/><span className="font-bold text-sm">Monthly Estimate</span><span className="text-[10px] text-gray-400 ml-auto">From {completedDays.length} day{completedDays.length>1?"s":""}</span></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <div className="text-2xl font-black" style={{color:C.cyan}}>{extrapolated.perWeek.urgencyEpisodes.toFixed(1)}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">Urgency episodes/wk</div>
+                <div className="text-2xl font-black" style={{color:C.cyan}}>{extrapolated.perMonth.urgencyEpisodes.toFixed(1)}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Urgency episodes/mo</div>
               </div>
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <div className="text-2xl font-black" style={{color:C.navy}}>{extrapolated.perWeek.leakageEpisodes.toFixed(1)}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">Leakage episodes/wk</div>
+                <div className="text-2xl font-black" style={{color:C.navy}}>{extrapolated.perMonth.leakageEpisodes.toFixed(1)}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Leakage episodes/mo</div>
               </div>
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <div className="text-2xl font-black" style={{color:C.mintDark}}>{extrapolated.perWeek.daytimeVoids.toFixed(1)}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">Daytime voids/wk</div>
+                <div className="text-2xl font-black" style={{color:C.mintDark}}>{extrapolated.perMonth.daytimeVoids.toFixed(1)}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Daytime voids/mo</div>
               </div>
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <div className="text-2xl font-black text-gray-700">{extrapolated.perWeek.nighttimeVoids.toFixed(1)}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">Nighttime voids/wk</div>
+                <div className="text-2xl font-black text-gray-700">{extrapolated.perMonth.nighttimeVoids.toFixed(1)}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Nighttime voids/mo</div>
               </div>
             </div>
           </Card>
@@ -676,7 +691,7 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
 
         {completedDays.length>0&&(
           <div>
-            <h3 className="text-sm font-bold text-gray-600 mb-2">This week's logs</h3>
+            <h3 className="text-sm font-bold text-gray-600 mb-2">This month's logs</h3>
             <div className="space-y-2">
               {completedDays.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>(
                 <Card key={e.id} className="p-4">
@@ -724,9 +739,13 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
     return{wSes,mSes,weeks};
   },[sessions,today]);
 
-  const thisWeekDiary=useMemo(()=>{
-    const wk=getWeekKey(today);
-    const entries=diaryEntries.filter(e=>e.weekKey===wk&&e.completed);
+  const thisMonthDiary=useMemo(()=>{
+    const ms=startOfMonth(today);
+    const me=endOfMonth(today);
+    const entries=diaryEntries.filter(e=>{
+      const d=new Date(e.date);
+      return e.completed&&d>=ms&&d<=me;
+    });
     if(entries.length===0)return null;
     return{leaksPerDay:(entries.reduce((s,e)=>s+(e.leakageEpisodes||0),0)/entries.length).toFixed(1),urgencyPerDay:(entries.reduce((s,e)=>s+e.urgencyEpisodes,0)/entries.length).toFixed(1),daysLogged:entries.length};
   },[diaryEntries,today]);
@@ -832,19 +851,19 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
         </Card>
       </div>
 
-      {thisWeekDiary&&(
+      {thisMonthDiary&&(
         <div className="px-6 pb-5">
           <Card className="p-4" style={{borderLeft:`4px solid ${C.mint}`}}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <ClipboardList className="w-4 h-4" style={{color:C.mint}}/>
-                <span className="text-xs font-bold text-gray-600">Diary — {thisWeekDiary.daysLogged} day{thisWeekDiary.daysLogged>1?"s":""} this week</span>
+                <span className="text-xs font-bold text-gray-600">Diary — {thisMonthDiary.daysLogged} day{thisMonthDiary.daysLogged>1?"s":""} this month</span>
               </div>
               <button onClick={()=>onNav("diary")} className="text-[10px] font-bold hover:underline" style={{color:C.cyan}}>View →</button>
             </div>
             <div className="flex gap-5 text-xs text-gray-500">
-              <span><span className="font-black" style={{color:C.navy}}>{thisWeekDiary.leaksPerDay}</span> leakage/day</span>
-              <span><span className="font-black" style={{color:C.cyan}}>{thisWeekDiary.urgencyPerDay}</span> urgency/day</span>
+              <span><span className="font-black" style={{color:C.navy}}>{thisMonthDiary.leaksPerDay}</span> leakage/day</span>
+              <span><span className="font-black" style={{color:C.cyan}}>{thisMonthDiary.urgencyPerDay}</span> urgency/day</span>
             </div>
           </Card>
         </div>
