@@ -459,25 +459,23 @@ function AlarmCard({a,onEdit,onToggle,onDelete,formatSchedule,use24}){
 function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
   const today=new Date();
   const ws=startOfWeek(today);
-  const we=endOfWeek(today);
   const ms=startOfMonth(today);
   const me=endOfMonth(today);
   const daysInMonth=me.getDate();
-  const weekEntries=diaryEntries.filter(e=>{
+  const monthEntries=diaryEntries.filter(e=>{
     const d=new Date(e.date);
-    return d>=ws&&d<=we;
+    return d>=ms&&d<=me;
   });
   const completedDays=diaryEntries.filter(e=>{
     const d=new Date(e.date);
     return e.completed&&d>=ms&&d<=me;
   });
+  const calendarDays=eachDay(startOfWeek(ms),endOfWeek(me));
   const [activeDay,setActiveDay]=useState(null);
   const [form,setForm]=useState({urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
 
-  const weekDays=Array.from({length:7},(_,i)=>addDays(ws,i));
-
   const openDay=(day)=>{
-    const existing=weekEntries.find(e=>sameDay(e.date,day));
+    const existing=monthEntries.find(e=>sameDay(e.date,day));
     setForm(existing?{urgencyEpisodes:existing.urgencyEpisodes,leakageEpisodes:existing.leakageEpisodes||0,daytimeVoids:existing.daytimeVoids||0,nighttimeVoids:existing.nighttimeVoids||0}:{urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
     setActiveDay(day);
   };
@@ -532,29 +530,34 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
             <span className="text-sm font-bold">This Month</span>
             <span className="text-xs font-bold px-3 py-1 rounded-full" style={{background:completedDays.length>=3?"#e8faf4":"#e8f9fb",color:completedDays.length>=3?C.mintDark:C.cyanDark}}>{completedDays.length}/3 days logged</span>
           </div>
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {weekDaysFull.map(d=><div key={d} className="text-center text-[9px] text-gray-400 font-semibold py-1">{d}</div>)}
+          </div>
           <div className="grid grid-cols-7 gap-1.5">
-            {weekDays.map((day,i)=>{
+            {calendarDays.map((day,i)=>{
+              const inMonth=isSameMonth(day,today);
               const future=isAfterDay(day,today);
-              const entry=weekEntries.find(e=>sameDay(e.date,day));
+              const disabled=!inMonth||future;
+              const entry=monthEntries.find(e=>sameDay(e.date,day));
               const isToday=sameDay(day,today);
               const isActive=activeDay&&sameDay(day,activeDay);
               return(
-                <button key={i} disabled={future} onClick={()=>!future&&openDay(day)}
-                  className="flex flex-col items-center py-2 rounded-xl text-xs transition-all border-2"
+                <button key={i} disabled={disabled} onClick={()=>!disabled&&openDay(day)}
+                  className="aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] transition-all relative border-2"
                   style={{
-                    opacity:future?0.3:1,
-                    cursor:future?"default":"pointer",
+                    opacity:inMonth?1:0.25,
+                    cursor:disabled?"default":"pointer",
                     borderColor:isActive?C.navy:entry?C.mint:isToday?C.cyan:"#e5e7eb",
                     background:isActive?C.navy:entry?"#e8faf4":isToday?"#e8f9fb":"white",
+                    color:isActive?"white":entry?C.mintDark:isToday?C.cyanDark:"#374151",
                   }}>
-                  <span className="text-[9px] mb-1" style={{color:isActive?"#a5c8ff":entry?C.mintDark:isToday?C.cyanDark:"#9ca3af"}}>{weekDayLetters[i]}</span>
-                  <span className="font-bold text-sm" style={{color:isActive?"white":entry?C.mintDark:isToday?C.cyanDark:"#374151"}}>{day.getDate()}</span>
-                  {entry&&!isActive&&<div className="mt-1 h-1.5 w-1.5 rounded-full" style={{background:C.mint}}/>}
+                  {day.getDate()}
+                  {entry&&!isActive&&<div className="absolute bottom-1 h-1.5 w-1.5 rounded-full" style={{background:C.mint}}/>}
                 </button>
               );
             })}
           </div>
-          {!activeDay&&completedDays.length<3&&<p className="text-xs text-gray-400 text-center mt-3">Tap any past or today's date to log</p>}
+          {!activeDay&&<p className="text-xs text-gray-400 text-center mt-3">Only today and past dates can be logged</p>}
         </Card>
 
         {activeDay&&(
