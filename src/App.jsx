@@ -231,6 +231,10 @@ const INCONTINENCE_SUBTYPES={
   pelvicPain:{label:"Pelvic Pain",Icon:Heart,desc:"Persistent pain or discomfort in the pelvic region",accent:"#ec4899"},
 };
 
+const GENDER_OPTIONS=["Female","Male","Non-binary","Other / Prefer not to say"];
+const EDUCATION_LEVELS=["Prefer not to say","Less than high school","High school / GED","Some college","Associate's degree","Bachelor's degree","Graduate degree"];
+const RACE_ETHNICITY_OPTIONS=["Prefer not to say","American Indian or Alaska Native","Asian","Black or African American","Hispanic or Latino","Middle Eastern or North African","Native Hawaiian or Other Pacific Islander","White","Multiracial"];
+
 const PSEUDODIAGNOSIS={
   urge:{title:"Overactive Bladder (OAB)",bg:"#e8f9fb",border:`2px solid ${C.cyan}40`,text:C.cyanDark,body:"Your symptoms are consistent with overactive bladder, where bladder muscles contract unexpectedly. Neuromodulation is highly effective for this pattern — most patients see 50–70% reduction in urge episodes after 8 weeks."},
   urgency:{title:"Urinary Urgency Pattern",bg:"#e8f9fb",border:`2px solid ${C.cyan}40`,text:C.cyanDark,body:"Your pattern suggests urgency-predominant bladder symptoms. Tibial neuromodulation is commonly used to reduce urgency intensity and improve bladder control over time."},
@@ -1289,8 +1293,6 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets}){
   const addPreset=()=>{if(!pName.trim())return;onUpdatePresets([...presets,{id:Date.now().toString(),name:pName.trim(),duration:parseInt(pDur)||30,frequency:parseInt(pFreq)||10,isPinned:false}]);setPName("");setPDur("30");setPFreq("10");};
   const primaryDx=getPrimaryDiagnosis(form.pfdTypes||{});
   const dx=primaryDx?PSEUDODIAGNOSIS[primaryDx]:null;
-  const EDUCATION_LEVELS=["Prefer not to say","Less than high school","High school / GED","Some college","Associate's degree","Bachelor's degree","Graduate degree"];
-  const RACE_ETHNICITY_OPTIONS=["Prefer not to say","American Indian or Alaska Native","Asian","Black or African American","Hispanic or Latino","Middle Eastern or North African","Native Hawaiian or Other Pacific Islander","White","Multiracial"];
 
   const toggle24=(v)=>{ const nf={...form,use24:v}; setForm(nf); onSave(nf); };
 
@@ -1314,7 +1316,7 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets}){
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Weight (lbs)</label><input type="number" min="0" value={form.weight||""} onChange={e=>setForm({...form,weight:Math.max(0,parseInt(e.target.value)||0)})} placeholder="Weight" className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Gender</label><select value={form.gender||""} onChange={e=>setForm({...form,gender:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Other / Prefer not to say</option></select></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Gender</label><select value={form.gender||""} onChange={e=>setForm({...form,gender:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{GENDER_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Education Level</label><select value={form.education||""} onChange={e=>setForm({...form,education:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{EDUCATION_LEVELS.map(l=><option key={l}>{l}</option>)}</select></div>
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Race / Ethnicity</label><select value={form.raceEthnicity||""} onChange={e=>setForm({...form,raceEthnicity:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{RACE_ETHNICITY_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
               </div>
@@ -1390,6 +1392,187 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets}){
   );
 }
 
+function OnboardingScreen({onComplete}){
+  const [step,setStep]=useState(0);
+  const [form,setForm]=useState({
+    firstName:"",
+    lastName:"",
+    email:"",
+    password:"",
+    pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,constipation:false,pelvicPain:false,fecal:false},
+    age:"",
+    weight:"",
+    gender:"",
+    education:"",
+    raceEthnicity:"",
+  });
+
+  const canContinueProfile=!!form.firstName.trim()&&!!form.lastName.trim()&&!!form.email.trim()&&!!form.password.trim();
+  const hasDx=Object.values(form.pfdTypes).some(Boolean);
+
+  const complete=(skipIntro)=>{
+    onComplete({
+      profile:{firstName:form.firstName.trim(),lastName:form.lastName.trim(),email:form.email.trim(),password:form.password},
+      settings:{
+        name:`${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
+        email:form.email.trim(),
+        age:form.age||"",
+        weight:form.weight||"",
+        gender:form.gender||"",
+        education:form.education||"",
+        raceEthnicity:form.raceEthnicity||"",
+        pfdTypes:form.pfdTypes,
+      },
+      skipIntro,
+    });
+  };
+
+  return(
+    <div className={cn("min-h-screen pb-10",BG)}>
+      <div className="max-w-2xl mx-auto p-6 space-y-5">
+        <div>
+          <div>
+            <h1 className="text-2xl font-black" style={{color:C.navy}}>Welcome to PelviStim</h1>
+            <p className="text-sm text-gray-500">First-time setup</p>
+          </div>
+        </div>
+        <Card className="p-5">
+          <div className="flex items-center gap-2 mb-4">
+            {[0,1,2].map(i=><div key={i} className="h-2.5 rounded-full transition-all" style={{width:step===i?26:10,background:step===i?C.navy:step>i?C.cyan:"#e5e7eb"}}/>)}
+            <span className="ml-auto text-[10px] font-bold text-gray-400">Step {step+1} of 3</span>
+          </div>
+
+          {step===0&&(
+            <div className="space-y-4">
+              <h2 className="text-base font-black" style={{color:C.navy}}>Create Your Profile</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">First Name *</label><input value={form.firstName} onChange={e=>setForm({...form,firstName:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Last Name *</label><input value={form.lastName} onChange={e=>setForm({...form,lastName:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Email *</label><input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Password *</label><input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+              </div>
+            </div>
+          )}
+
+          {step===1&&(
+            <div className="space-y-4">
+              <h2 className="text-base font-black" style={{color:C.navy}}>Diagnosis & Symptoms</h2>
+              <p className="text-xs text-gray-500">Select all that apply</p>
+              <div className="space-y-2">
+                {Object.entries(INCONTINENCE_SUBTYPES).map(([k,v])=>{
+                  const checked=!!form.pfdTypes[k];
+                  const {Icon,accent}=v;
+                  return(
+                    <button key={k} onClick={()=>setForm({...form,pfdTypes:{...form.pfdTypes,[k]:!checked}})} className="flex items-center gap-3 w-full p-3 rounded-xl border-2 text-left text-sm transition-all" style={{borderColor:checked?accent:"#e5e7eb",background:checked?`${accent}12`:"white"}}>
+                      <Checkbox checked={checked} onChange={()=>{}}/>
+                      <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0" style={{background:`${accent}20`}}><Icon className="w-5 h-5" style={{color:accent}}/></div>
+                      <div className="flex-1 min-w-0"><div className="font-bold text-sm">{v.label}</div><div className="text-xs text-gray-400 truncate">{v.desc}</div></div>
+                    </button>
+                  );
+                })}
+              </div>
+              {!hasDx&&<p className="text-[11px] text-amber-700">Select at least one symptom to continue.</p>}
+            </div>
+          )}
+
+          {step===2&&(
+            <div className="space-y-4">
+              <h2 className="text-base font-black" style={{color:C.navy}}>Optional Demographics</h2>
+              <p className="text-xs text-gray-500">You can skip any field</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Age</label><input type="number" min="0" max="120" value={form.age} onChange={e=>setForm({...form,age:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Weight (lbs)</label><input type="number" min="0" value={form.weight} onChange={e=>setForm({...form,weight:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Gender</label><select value={form.gender} onChange={e=>setForm({...form,gender:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{GENDER_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Education</label><select value={form.education} onChange={e=>setForm({...form,education:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{EDUCATION_LEVELS.map(l=><option key={l}>{l}</option>)}</select></div>
+              </div>
+              <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Race / Ethnicity</label><select value={form.raceEthnicity} onChange={e=>setForm({...form,raceEthnicity:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{RACE_ETHNICITY_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
+            </div>
+          )}
+
+          <div className="flex gap-3 mt-5">
+            {step>0&&<button onClick={()=>setStep(step-1)} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600">Back</button>}
+            {step<2&&<button onClick={()=>setStep(step+1)} disabled={(step===0&&!canContinueProfile)||(step===1&&!hasDx)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Continue</button>}
+            {step===2&&(
+              <>
+                <button onClick={()=>complete(true)} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600">Complete & Skip Intro</button>
+                <button onClick={()=>complete(false)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Complete Setup</button>
+              </>
+            )}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({profile,onLogin}){
+  const [email,setEmail]=useState(profile?.email||"");
+  const [password,setPassword]=useState("");
+  const [error,setError]=useState("");
+  const submit=()=>{
+    if(email.trim().toLowerCase()===String(profile?.email||"").toLowerCase()&&password===profile?.password){
+      setError("");
+      onLogin();
+      return;
+    }
+    setError("Incorrect email or password.");
+  };
+  return(
+    <div className={cn("min-h-screen pb-10",BG)}>
+      <div className="max-w-md mx-auto p-6">
+        <Card className="p-6">
+          <h1 className="text-2xl font-black mb-1" style={{color:C.navy}}>Log In</h1>
+          <p className="text-sm text-gray-500 mb-5">Sign in to continue</p>
+          <div className="space-y-3">
+            <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+            <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
+            {error&&<p className="text-xs text-red-600">{error}</p>}
+            <button onClick={submit} className="w-full h-11 rounded-2xl text-white font-bold text-sm" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Log In</button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function IntroCoachmark({step,total,onNext,onSkip}){
+  const isLast=step===total-1;
+  const steps=[
+    {title:"Guides",body:"Start in Guides to learn about PFD and your device.",arrow:"left"},
+    {title:"Understanding Guide",body:"Review the Understanding PFD & Neuromodulation guide first.",arrow:"left"},
+    {title:"Device Setup Guide",body:"Next, complete the device setup instructions.",arrow:"left"},
+    {title:"Calibration Guide",body:"Then review the calibration guide before sessions.",arrow:"left"},
+    {title:"Stimulation",body:"Use Home to start your stimulation workflow.",arrow:"center"},
+    {title:"Voiding Diary",body:"Log diary entries here to track symptoms.",arrow:"right-mid"},
+    {title:"Settings",body:"Use Settings to manage your profile and preferences.",arrow:"right"},
+  ];
+  const s=steps[step]||steps[0];
+  const arrowPos=s.arrow==="left"?"left-10":s.arrow==="center"?"left-1/2 -translate-x-1/2":s.arrow==="right-mid"?"right-20":"right-8";
+  return(
+    <div className="fixed inset-0 z-[120] pointer-events-none">
+      <div className="absolute inset-0 bg-black/35"/>
+      <div className={cn("absolute bottom-20",arrowPos)}>
+        <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[14px] border-l-transparent border-r-transparent border-t-white mx-auto"/>
+      </div>
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-28 w-[calc(100%-2rem)] max-w-md pointer-events-auto">
+        <Card className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-black text-base" style={{color:C.navy}}>{s.title}</h3>
+              <p className="text-sm text-gray-600 mt-1">{s.body}</p>
+            </div>
+            <button onClick={onSkip} className="text-[10px] font-bold text-gray-500 hover:underline">Skip</button>
+          </div>
+          <div className="flex items-center justify-between mt-4">
+            <span className="text-[10px] text-gray-400">Step {step+1} of {total}</span>
+            <button onClick={onNext} className="h-9 px-4 rounded-xl text-white text-sm font-bold" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>{isLast?"Finish":"Next"}</button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 // ─── Reminder Popup ───────────────────────────────────────────────────────────
 function ReminderPopup({alarm,onDismiss,onStartSession,use24}){
   const isAutostart=alarm.alarmType==="autostart";
@@ -1413,6 +1596,7 @@ function ReminderPopup({alarm,onDismiss,onStartSession,use24}){
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App(){
+  const AUTH_STORAGE_KEY="pelvistim_auth_v1";
   const [screen,setScreen]=useState("welcome");
   const [sessions,setSessions]=useState([]);
   const [diaryEntries,setDiaryEntries]=useState([]);
@@ -1429,19 +1613,95 @@ export default function App(){
   const [guidesInit,setGuidesInit]=useState("menu");
   const [pausedSession,setPausedSession]=useState(null);
   const [activeReminder,setActiveReminder]=useState(null);
+  const [authProfile,setAuthProfile]=useState(null);
+  const [onboardingComplete,setOnboardingComplete]=useState(false);
+  const [isAuthenticated,setIsAuthenticated]=useState(false);
+  const [introDone,setIntroDone]=useState(false);
+  const [tourStep,setTourStep]=useState(null);
   const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",raceEthnicity:"",use24:false,pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,fecal:false,constipation:false,pelvicPain:false}});
 
   const use24=settings.use24||false;
 
   useEffect(()=>{
+    try{
+      const raw=localStorage.getItem(AUTH_STORAGE_KEY);
+      if(!raw) return;
+      const parsed=JSON.parse(raw);
+      if(parsed?.profile) setAuthProfile(parsed.profile);
+      setOnboardingComplete(!!parsed?.onboardingComplete);
+      setIntroDone(!!parsed?.introDone);
+    }catch{}
+  },[]);
+
+  useEffect(()=>{
+    try{
+      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({profile:authProfile,onboardingComplete,introDone}));
+    }catch{}
+  },[authProfile,onboardingComplete,introDone]);
+
+  useEffect(()=>{
+    if(!isAuthenticated) return;
     const t=setTimeout(()=>{
       const a=alarms.find(x=>x.active&&x.alarmType==="reminder");
       if(a)setActiveReminder(a);
     },5000);
     return()=>clearTimeout(t);
-  },[]);
+  },[isAuthenticated,alarms]);
 
   const handleSaveSettings=(s)=>{setSettings(s);};
+
+  const handleOnboardingComplete=({profile,settings:setupSettings,skipIntro})=>{
+    setAuthProfile(profile);
+    setSettings(prev=>({
+      ...prev,
+      ...setupSettings,
+      email:profile.email,
+      name:`${profile.firstName} ${profile.lastName}`.trim(),
+      pfdTypes:setupSettings.pfdTypes||prev.pfdTypes,
+    }));
+    setOnboardingComplete(true);
+    setIsAuthenticated(false);
+    setIntroDone(!!skipIntro);
+    setTourStep(null);
+    setScreen("welcome");
+    setGuidesInit("menu");
+  };
+
+  const handleLogin=()=>{
+    setIsAuthenticated(true);
+    if(!introDone){
+      setTourStep(0);
+      setGuidesInit("menu");
+      setScreen("guides");
+    }else{
+      setScreen("welcome");
+    }
+  };
+
+  const finishTour=()=>{
+    setTourStep(null);
+    setIntroDone(true);
+    setScreen("welcome");
+  };
+
+  const nextTourStep=()=>{
+    if(tourStep===null) return;
+    if(tourStep>=6){finishTour();return;}
+    setTourStep(tourStep+1);
+  };
+
+  useEffect(()=>{
+    if(!isAuthenticated||tourStep===null) return;
+    if(tourStep<=3){
+      setScreen("guides");
+      const sections=["menu","learn","device-setup","calibration"];
+      setGuidesInit(sections[tourStep]||"menu");
+      return;
+    }
+    if(tourStep===4){setScreen("welcome");return;}
+    if(tourStep===5){setScreen("diary");return;}
+    if(tourStep===6){setScreen("settings");}
+  },[isAuthenticated,tourStep]);
 
   const nav=useCallback((key)=>{
     if(key==="today")setScreen("welcome");
@@ -1451,6 +1711,18 @@ export default function App(){
     else if(key==="schedule")setScreen("schedule");
     else if(key==="diary")setScreen("diary");
   },[]);
+
+  if(!onboardingComplete){
+    return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
+  }
+
+  if(onboardingComplete&&!authProfile){
+    return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
+  }
+
+  if(!isAuthenticated){
+    return <LoginScreen profile={authProfile} onLogin={handleLogin}/>;
+  }
 
   return(
     <div className="h-full w-full overflow-auto" style={{fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif"}}>
@@ -1478,7 +1750,7 @@ export default function App(){
       {screen==="complete"&&<CompleteScreen onHome={()=>setScreen("welcome")} startTime={lastStart} endTime={lastEnd} onNav={nav} use24={use24}/>}
 
       {/* Guides accessed from main nav — normal back behavior */}
-      {screen==="guides"&&<GuidesScreen onBack={()=>setScreen("welcome")} onNav={nav} initialSection={guidesInit}/>}
+      {screen==="guides"&&<GuidesScreen key={`guides-${guidesInit}-${tourStep===null?"normal":tourStep}`} onBack={()=>setScreen("welcome")} onNav={nav} initialSection={guidesInit}/>}
 
       {/* Guides accessed from precheck — exit returns to precheck */}
       {screen==="guides-session-setup"&&<GuidesScreen
@@ -1497,6 +1769,7 @@ export default function App(){
       />}
 
       {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets}/>}
+      {tourStep!==null&&<IntroCoachmark step={tourStep} total={7} onNext={nextTourStep} onSkip={finishTour}/>}
     </div>
   );
 }
