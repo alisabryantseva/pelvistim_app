@@ -1410,7 +1410,7 @@ function OnboardingScreen({onComplete}){
   const canContinueProfile=!!form.firstName.trim()&&!!form.lastName.trim()&&!!form.email.trim()&&!!form.password.trim();
   const hasDx=Object.values(form.pfdTypes).some(Boolean);
 
-  const complete=(skipIntro)=>{
+  const complete=()=>{
     onComplete({
       profile:{firstName:form.firstName.trim(),lastName:form.lastName.trim(),email:form.email.trim(),password:form.password},
       settings:{
@@ -1423,7 +1423,6 @@ function OnboardingScreen({onComplete}){
         raceEthnicity:form.raceEthnicity||"",
         pfdTypes:form.pfdTypes,
       },
-      skipIntro,
     });
   };
 
@@ -1492,12 +1491,7 @@ function OnboardingScreen({onComplete}){
           <div className="flex gap-3 mt-5">
             {step>0&&<button onClick={()=>setStep(step-1)} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600">Back</button>}
             {step<2&&<button onClick={()=>setStep(step+1)} disabled={(step===0&&!canContinueProfile)||(step===1&&!hasDx)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Continue</button>}
-            {step===2&&(
-              <>
-                <button onClick={()=>complete(true)} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600">Complete & Skip Intro</button>
-                <button onClick={()=>complete(false)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Complete Setup</button>
-              </>
-            )}
+            {step===2&&<button onClick={complete} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Complete Setup</button>}
           </div>
         </Card>
       </div>
@@ -1550,7 +1544,6 @@ function IntroCoachmark({step,total,onNext,onSkip}){
   const arrowPos=s.arrow==="left"?"left-10":s.arrow==="center"?"left-1/2 -translate-x-1/2":s.arrow==="right-mid"?"right-20":"right-8";
   return(
     <div className="fixed inset-0 z-[120] pointer-events-none">
-      <div className="absolute inset-0 bg-black/35"/>
       <div className={cn("absolute bottom-20",arrowPos)}>
         <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[14px] border-l-transparent border-r-transparent border-t-white mx-auto"/>
       </div>
@@ -1602,7 +1595,6 @@ export default function App(){
   const [diaryEntries,setDiaryEntries]=useState([]);
   const [presets,setPresets]=useState([]);
   const [alarms,setAlarms]=useState([
-    {id:"d1",time:"09:00",label:"Morning Session",alarmType:"reminder",isRecurring:true,days:{0:false,1:true,2:true,3:true,4:true,5:true,6:false},leadMins:10,active:true},
     {id:"d2",time:"19:30",label:"Evening Session",alarmType:"autostart",isRecurring:true,days:{0:true,1:true,2:true,3:true,4:true,5:true,6:true},active:false},
   ]);
   const [intensity,setIntensity]=useState(5.0);
@@ -1650,7 +1642,7 @@ export default function App(){
 
   const handleSaveSettings=(s)=>{setSettings(s);};
 
-  const handleOnboardingComplete=({profile,settings:setupSettings,skipIntro})=>{
+  const handleOnboardingComplete=({profile,settings:setupSettings})=>{
     setAuthProfile(profile);
     setSettings(prev=>({
       ...prev,
@@ -1660,10 +1652,10 @@ export default function App(){
       pfdTypes:setupSettings.pfdTypes||prev.pfdTypes,
     }));
     setOnboardingComplete(true);
-    setIsAuthenticated(false);
-    setIntroDone(!!skipIntro);
-    setTourStep(null);
-    setScreen("welcome");
+    setIsAuthenticated(true);
+    setIntroDone(false);
+    setTourStep(0);
+    setScreen("guides");
     setGuidesInit("menu");
   };
 
