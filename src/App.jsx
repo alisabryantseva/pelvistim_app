@@ -1499,7 +1499,24 @@ function OnboardingScreen({onComplete}){
   );
 }
 
-function LoginScreen({profile,onLogin}){
+function AuthLandingScreen({hasAccount,onChooseLogin,onChooseCreate}){
+  return(
+    <div className={cn("min-h-screen pb-10",BG)}>
+      <div className="max-w-md mx-auto p-6">
+        <Card className="p-6 text-center">
+          <h1 className="text-2xl font-black mb-1" style={{color:C.navy}}>Welcome to PelviStim</h1>
+          <p className="text-sm text-gray-500 mb-6">{hasAccount?"Sign in or create another account":"Get started by creating your account"}</p>
+          <div className="space-y-3">
+            <button onClick={onChooseLogin} disabled={!hasAccount} className="w-full h-11 rounded-2xl text-white font-bold text-sm disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Log In</button>
+            <button onClick={onChooseCreate} className="w-full h-11 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-700 hover:bg-gray-50">Create New Account</button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({profile,onLogin,onBackToStart}){
   const [email,setEmail]=useState(profile?.email||"");
   const [password,setPassword]=useState("");
   const [error,setError]=useState("");
@@ -1522,6 +1539,7 @@ function LoginScreen({profile,onLogin}){
             <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none"/></div>
             {error&&<p className="text-xs text-red-600">{error}</p>}
             <button onClick={submit} className="w-full h-11 rounded-2xl text-white font-bold text-sm" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Log In</button>
+            <button onClick={onBackToStart} className="w-full h-10 rounded-xl border-2 border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-gray-50">Back</button>
           </div>
         </Card>
       </div>
@@ -1606,10 +1624,12 @@ export default function App(){
   const [pausedSession,setPausedSession]=useState(null);
   const [activeReminder,setActiveReminder]=useState(null);
   const [authProfile,setAuthProfile]=useState(null);
+  const [storedSettings,setStoredSettings]=useState(null);
   const [onboardingComplete,setOnboardingComplete]=useState(false);
   const [isAuthenticated,setIsAuthenticated]=useState(false);
   const [introDone,setIntroDone]=useState(false);
   const [tourStep,setTourStep]=useState(null);
+  const [authStep,setAuthStep]=useState("start");
   const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",raceEthnicity:"",use24:false,pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,fecal:false,constipation:false,pelvicPain:false}});
 
   const use24=settings.use24||false;
@@ -1620,16 +1640,18 @@ export default function App(){
       if(!raw) return;
       const parsed=JSON.parse(raw);
       if(parsed?.profile) setAuthProfile(parsed.profile);
+      if(parsed?.settings) setStoredSettings(parsed.settings);
       setOnboardingComplete(!!parsed?.onboardingComplete);
       setIntroDone(!!parsed?.introDone);
+      if(parsed?.onboardingComplete&&parsed?.profile) setAuthStep("start");
     }catch{}
   },[]);
 
   useEffect(()=>{
     try{
-      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({profile:authProfile,onboardingComplete,introDone}));
+      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({profile:authProfile,settings:storedSettings,onboardingComplete,introDone}));
     }catch{}
-  },[authProfile,onboardingComplete,introDone]);
+  },[authProfile,storedSettings,onboardingComplete,introDone]);
 
   useEffect(()=>{
     if(!isAuthenticated) return;
@@ -1640,7 +1662,7 @@ export default function App(){
     return()=>clearTimeout(t);
   },[isAuthenticated,alarms]);
 
-  const handleSaveSettings=(s)=>{setSettings(s);};
+  const handleSaveSettings=(s)=>{setSettings(s);setStoredSettings(s);};
 
   const handleOnboardingComplete=({profile,settings:setupSettings})=>{
     setAuthProfile(profile);
@@ -1651,15 +1673,31 @@ export default function App(){
       name:`${profile.firstName} ${profile.lastName}`.trim(),
       pfdTypes:setupSettings.pfdTypes||prev.pfdTypes,
     }));
+    setStoredSettings(setupSettings);
     setOnboardingComplete(true);
     setIsAuthenticated(true);
     setIntroDone(false);
     setTourStep(0);
     setScreen("guides");
     setGuidesInit("menu");
+    setAuthStep("start");
   };
 
   const handleLogin=()=>{
+    if(storedSettings){
+      setSettings(prev=>({
+        ...prev,
+        ...storedSettings,
+        email:authProfile?.email||storedSettings.email||prev.email,
+        name:storedSettings.name||`${authProfile?.firstName||""} ${authProfile?.lastName||""}`.trim(),
+      }));
+    }else{
+      setSettings(prev=>({
+        ...prev,
+        email:authProfile?.email||prev.email,
+        name:`${authProfile?.firstName||""} ${authProfile?.lastName||""}`.trim()||prev.name,
+      }));
+    }
     setIsAuthenticated(true);
     if(!introDone){
       setTourStep(0);
@@ -1705,6 +1743,12 @@ export default function App(){
   },[]);
 
   if(!onboardingComplete){
+    if(authStep==="start"){
+      return <AuthLandingScreen hasAccount={false} onChooseLogin={()=>setAuthStep("login")} onChooseCreate={()=>setAuthStep("create")}/>;
+    }
+    if(authStep==="login"){
+      return <LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setAuthStep("start")}/>;
+    }
     return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
   }
 
@@ -1713,7 +1757,13 @@ export default function App(){
   }
 
   if(!isAuthenticated){
-    return <LoginScreen profile={authProfile} onLogin={handleLogin}/>;
+    if(authStep==="start"){
+      return <AuthLandingScreen hasAccount={!!authProfile} onChooseLogin={()=>setAuthStep("login")} onChooseCreate={()=>setAuthStep("create")}/>;
+    }
+    if(authStep==="create"){
+      return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
+    }
+    return <LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setAuthStep("start")}/>;
   }
 
   return(
