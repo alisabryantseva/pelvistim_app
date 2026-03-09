@@ -463,7 +463,7 @@ function AlarmCard({a,onEdit,onToggle,onDelete,formatSchedule,use24}){
 }
 
 // ─── Voiding Diary ────────────────────────────────────────────────────────────
-function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourSymptomLog}){
+function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,tourStep=null,onTourDayOpen,onTourSymptomLog}){
   const today=new Date();
   const ws=startOfWeek(today);
   const ms=startOfMonth(today);
@@ -480,6 +480,9 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
   const calendarDays=eachDay(startOfWeek(ms),endOfWeek(me));
   const [activeDay,setActiveDay]=useState(null);
   const [form,setForm]=useState({urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
+  const allowDayPick=!isTourActive||tourStep===7;
+  const allowSymptomEdit=!isTourActive||tourStep===8;
+  const onlyUrgencyControl=isTourActive&&tourStep===8;
 
   const openDay=(day)=>{
     const existing=monthEntries.find(e=>sameDay(e.date,day));
@@ -534,7 +537,7 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
       <div className="max-w-2xl mx-auto p-6 space-y-5">
         <div><h1 className="text-2xl font-bold tracking-tight">Voiding Diary</h1><p className="text-sm text-gray-500">Track at least 3 days this month — we extrapolate the rest</p></div>
 
-        <Card className="p-5">
+        <Card className={cn("p-5",isTourActive&&tourStep===7&&"ring-4 ring-cyan-300 animate-pulse")}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-bold">This Month</span>
             <span className="text-xs font-bold px-3 py-1 rounded-full" style={{background:completedDays.length>=3?"#e8faf4":"#e8f9fb",color:completedDays.length>=3?C.mintDark:C.cyanDark}}>{completedDays.length}/3 days logged</span>
@@ -552,11 +555,11 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
               const isToday=sameDay(day,today);
               const isActive=activeDay&&sameDay(day,activeDay);
               return(
-                <button key={i} disabled={disabled} onClick={()=>!disabled&&openDay(day)}
+                <button key={i} disabled={disabled||!allowDayPick} onClick={()=>!disabled&&allowDayPick&&openDay(day)}
                   className="aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] transition-all relative border-2"
                   style={{
                     opacity:!inMonth?0.25:future?0.55:1,
-                    cursor:disabled?"default":"pointer",
+                    cursor:disabled||!allowDayPick?"default":"pointer",
                     borderColor:isActive?C.navy:future?"#d1d5db":hasEntry?C.cyan:isToday?C.cyan:"#e5e7eb",
                     background:isActive?C.navy:future?"#f3f4f6":hasEntry?`${C.cyan}20`:isToday?"#e8f9fb":"white",
                     color:isActive?"white":future?"#9ca3af":hasEntry?C.cyanDark:isToday?C.cyanDark:"#374151",
@@ -577,7 +580,7 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
                 <h3 className="font-bold text-sm">{fmt(activeDay,{weekday:"long",month:"long",day:"numeric"})}</h3>
                 <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" style={{color:C.mint}}/> Saves automatically</p>
               </div>
-              <button onClick={()=>setActiveDay(null)} className="h-8 w-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+              <button onClick={()=>setActiveDay(null)} disabled={!allowSymptomEdit||onlyUrgencyControl} className="h-8 w-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-40">
                 <X className="w-4 h-4 text-gray-500"/>
               </button>
             </div>
@@ -593,9 +596,9 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg">−</button>
+                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes-1)} className={cn("h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40",isTourActive&&tourStep===8&&"ring-4 ring-cyan-300 animate-pulse")}>−</button>
                 <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.cyan}}>{form.urgencyEpisodes}</span>
-                <button onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg text-white" style={{background:`${C.cyan}20`,color:C.cyanDark}}>+</button>
+                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className={cn("h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg text-white disabled:opacity-40",isTourActive&&tourStep===8&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`${C.cyan}20`,color:C.cyanDark}}>+</button>
               </div>
             </div>
 
@@ -610,9 +613,9 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg">−</button>
+                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
                 <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.leakageEpisodes}</span>
-                <button onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg" style={{background:`${C.navy}15`,color:C.navy}}>+</button>
+                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.navy}15`,color:C.navy}}>+</button>
               </div>
             </div>
 
@@ -627,9 +630,9 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg">−</button>
+                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
                 <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.mintDark}}>{form.daytimeVoids}</span>
-                <button onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg" style={{background:`${C.mint}20`,color:C.mintDark}}>+</button>
+                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.mint}20`,color:C.mintDark}}>+</button>
               </div>
             </div>
 
@@ -644,9 +647,9 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg">−</button>
+                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
                 <span className="text-2xl font-black w-8 text-center tabular-nums text-gray-700">{form.nighttimeVoids}</span>
-                <button onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg bg-gray-200 text-gray-700">+</button>
+                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg bg-gray-200 text-gray-700 disabled:opacity-40">+</button>
               </div>
             </div>
           </Card>
@@ -730,7 +733,7 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourS
 }
 
 // ─── Welcome / Home ───────────────────────────────────────────────────────────
-function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessions,diaryEntries,onOpenCalendar,use24}){
+function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessions,diaryEntries,onOpenCalendar,use24,isTourActive=false,tourStep=null}){
   const [selectedDate,setSelectedDate]=useState(new Date());
   const [weekOffset,setWeekOffset]=useState(0);
   const today=new Date();
@@ -740,6 +743,7 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
   const hasCompleteSession=todaySessions.some(s=>s.complete);
   const hasSession=todaySessions.length>0;
   const isPausedToday=pausedSession&&sameDay(new Date(),selectedDate);
+  const forceTourStart=isTourActive&&tourStep===1;
 
   const sessionStats=useMemo(()=>{
     const ws=startOfWeek(today),we=endOfWeek(today),ms=startOfMonth(today),me=endOfMonth(today);
@@ -771,18 +775,18 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
           <span className="text-base font-black tracking-tight" style={{color:C.navy}}>PelviStim</span>
         </div>
         <h1 className="text-base font-bold text-gray-800">{fmt(selectedDate,{month:"long",day:"numeric"})}</h1>
-        <button onClick={onOpenCalendar} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/70 hover:bg-white transition-colors">
+        <button disabled={isTourActive} onClick={onOpenCalendar} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/70 hover:bg-white transition-colors disabled:opacity-40">
           <Calendar className="w-5 h-5" style={{color:C.navy}}/>
         </button>
       </div>
 
       <div className="px-6 pb-4">
         <div className="flex items-center gap-2">
-          <button onClick={()=>setWeekOffset(weekOffset-1)} className="h-8 w-8 shrink-0 rounded-xl bg-white/70 flex items-center justify-center hover:bg-white"><ChevronLeft className="w-4 h-4 text-gray-600"/></button>
+          <button disabled={isTourActive} onClick={()=>setWeekOffset(weekOffset-1)} className="h-8 w-8 shrink-0 rounded-xl bg-white/70 flex items-center justify-center hover:bg-white disabled:opacity-40"><ChevronLeft className="w-4 h-4 text-gray-600"/></button>
           <div className="grid grid-cols-7 gap-1 flex-1">
             {weekDays.map((day,i)=>{
               const sel=sameDay(day,selectedDate);const future=isAfterDay(day,today);const hasSes=sessions.some(s=>sameDay(s.timestamp,day));const isToday2=sameDay(day,today);
-              return(<button key={i} disabled={future} onClick={()=>!future&&setSelectedDate(day)} className={cn("flex flex-col items-center py-1 transition-all",future&&"opacity-30")}>
+              return(<button key={i} disabled={future||isTourActive} onClick={()=>!future&&!isTourActive&&setSelectedDate(day)} className={cn("flex flex-col items-center py-1 transition-all",(future||isTourActive)&&"opacity-30")}>
                 <span className="text-[10px] text-gray-400 mb-1">{weekDayLetters[new Date(day).getDay()]}</span>
                 <div className="h-9 w-9 rounded-xl flex items-center justify-center text-sm font-bold relative transition-all duration-200" style={{background:sel?C.navy:isToday2?"#e8f9fb":"transparent",color:sel?"white":isToday2?C.cyanDark:"#374151",boxShadow:sel?`0 4px 12px ${C.navy}40`:"none",transform:sel?"scale(1.1)":"scale(1)"}}>
                   {new Date(day).getDate()}{hasSes&&!sel&&<div className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full" style={{background:C.mint}}/>}
@@ -790,12 +794,19 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
               </button>);
             })}
           </div>
-          <button onClick={()=>setWeekOffset(weekOffset+1)} disabled={weekOffset>=0} className="h-8 w-8 shrink-0 rounded-xl bg-white/70 flex items-center justify-center hover:bg-white disabled:opacity-30"><ChevronRight className="w-4 h-4 text-gray-600"/></button>
+          <button onClick={()=>setWeekOffset(weekOffset+1)} disabled={weekOffset>=0||isTourActive} className="h-8 w-8 shrink-0 rounded-xl bg-white/70 flex items-center justify-center hover:bg-white disabled:opacity-30"><ChevronRight className="w-4 h-4 text-gray-600"/></button>
         </div>
       </div>
 
       <div className="px-6 pb-5">
-        {isPausedToday?(
+        {forceTourStart?(
+          <Card className="p-6 text-center" style={{background:`linear-gradient(135deg, #e8f9fb, #e8ecff)`,borderColor:`${C.cyan}40`,borderWidth:2}}>
+            <h2 className="text-2xl font-black mb-5" style={{color:C.navy}}>Tap Start Session</h2>
+            <button onClick={onStartSession} className={cn("h-12 px-8 rounded-2xl text-white font-bold text-base inline-flex items-center gap-2",isTourActive&&tourStep===1&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 6px 20px ${C.navy}50`}}>
+              <Activity className="w-5 h-5"/>Start Session
+            </button>
+          </Card>
+        ):isPausedToday?(
           <Card className="p-6 text-center" style={{background:"linear-gradient(135deg, #fff7ed, #fef9f0)",borderColor:C.peachDark,borderWidth:2}}>
             <h2 className="text-2xl font-black mb-5" style={{color:C.peachDark}}>Session Paused</h2>
             <button onClick={onResumeSession} className="h-12 px-8 rounded-2xl text-white font-bold text-base inline-flex items-center gap-2" style={{background:C.peachDark,boxShadow:`0 4px 14px ${C.peachDark}50`}}><Play className="w-5 h-5"/>Resume Session</button>
@@ -947,11 +958,16 @@ function UnifiedCalendar({onBack,onNav,sessions,diaryEntries,use24}){
 
 // ─── Pre-Check ────────────────────────────────────────────────────────────────
 // onViewDeviceSetup and onViewCalibrationGuide now route to session-context guide screens
-function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGuide,onNav,isTourActive=false,onTourIntensityChange,onTourCheckboxChange,onTourContinue}){
+function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGuide,onNav,isTourActive=false,tourStep=null,onTourIntensityChange,onTourCheckboxChange,onTourContinue}){
   const [intensity,setIntensity]=useState(1.0);
   const [electrode,setElectrode]=useState(false);
   const [spread,setSpread]=useState(false);
   const canContinue=electrode&&spread;
+  const allowIntensity=!isTourActive||tourStep===2;
+  const allowChecks=!isTourActive||tourStep===3||tourStep===4;
+  const allowContinue=!isTourActive||tourStep===4;
+  const allowBack=!isTourActive;
+  const allowGuideButtons=!isTourActive;
   const setIntensityWithTour=(v)=>{
     setIntensity(v);
     onTourIntensityChange?.(v);
@@ -981,17 +997,17 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
 
           {/* Two guide buttons side by side */}
           <div className="grid grid-cols-2 gap-3">
-            <button onClick={onViewDeviceSetup} className="h-11 rounded-xl border-2 border-gray-200 bg-white text-xs font-semibold text-gray-600 flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-all">
+            <button disabled={!allowGuideButtons} onClick={onViewDeviceSetup} className="h-11 rounded-xl border-2 border-gray-200 bg-white text-xs font-semibold text-gray-600 flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-all disabled:opacity-40">
               <BookOpen className="w-4 h-4 shrink-0" style={{color:C.navy}}/>Device Setup
             </button>
-            <button onClick={onViewCalibrationGuide} className="h-11 rounded-xl border-2 border-gray-200 bg-white text-xs font-semibold text-gray-600 flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-all">
+            <button disabled={!allowGuideButtons} onClick={onViewCalibrationGuide} className="h-11 rounded-xl border-2 border-gray-200 bg-white text-xs font-semibold text-gray-600 flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-all disabled:opacity-40">
               <Info className="w-4 h-4 shrink-0" style={{color:C.cyan}}/>Calibration Guide
             </button>
           </div>
 
-          <div className="flex flex-col items-center py-4">
+          <div className={cn("flex flex-col items-center py-4",isTourActive&&tourStep===2&&"ring-4 ring-cyan-300 rounded-2xl animate-pulse")}>
             <span className="text-sm font-semibold text-gray-500 mb-4">Stimulation Intensity (0-10)</span>
-            <IntensityStepper value={intensity} onChange={setIntensityWithTour} large/>
+            <IntensityStepper value={intensity} onChange={setIntensityWithTour} large disabled={!allowIntensity}/>
           </div>
           {intensity>=10&&<div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex gap-2"><AlertCircle className="w-4 h-4 mt-0.5 shrink-0"/>Reposition the band higher or lower if no sensation at max intensity.</div>}
           <div className="space-y-2">
@@ -1000,7 +1016,7 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
               {state:electrode,set:toggleElectrode,label:"Tingling at electrode site",sub:"First sensation where the electrode touches the skin",num:1,prev:true},
               {state:spread,set:toggleSpread,label:"Tingling migrates to heel and/or toes",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
             ].map(({state,set,label,sub,num,prev})=>(
-              <button key={num} disabled={!prev} onClick={()=>prev&&set(!state)} className="flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all" style={{opacity:!prev?0.4:1,cursor:!prev?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
+              <button key={num} disabled={!prev||!allowChecks} onClick={()=>prev&&allowChecks&&set(!state)} className={cn("flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all",isTourActive&&tourStep===3&&"ring-4 ring-cyan-300 animate-pulse")} style={{opacity:!prev||!allowChecks?0.4:1,cursor:!prev||!allowChecks?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
                 <Checkbox checked={state} onChange={prev?set:()=>{}}/>
                 <div>
                   <div className="font-semibold text-sm flex items-center gap-2">
@@ -1014,8 +1030,8 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
           </div>
           {canContinue&&<div className="flex items-center gap-2 p-3 rounded-xl text-sm" style={{background:"#e8faf4",border:`1px solid ${C.mint}40`,color:C.mintDark}}><CheckCircle2 className="w-4 h-4 shrink-0"/>Calibration confirmed. Ready to start.</div>}
           <div className="flex gap-3 pt-2">
-            <button onClick={onBack} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50"><ArrowLeft className="w-4 h-4"/>Back</button>
-            <button onClick={handleContinue} disabled={!canContinue} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
+            <button disabled={!allowBack} onClick={onBack} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
+            <button onClick={handleContinue} disabled={!canContinue||!allowContinue} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===4&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
           </div>
         </div></Card>
       </div>
@@ -1025,13 +1041,17 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
 }
 
 // ─── Preset ───────────────────────────────────────────────────────────────────
-function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActive=false,onTourCustomizeOpen,onTourCustomEdit,onTourStartSession}){
+function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActive=false,tourStep=null,onTourCustomizeOpen,onTourCustomEdit,onTourStartSession}){
   const [selected,setSelected]=useState("default");
   const [showCustom,setShowCustom]=useState(false);
   const [dur,setDur]=useState("30");
   const [freq,setFreq]=useState("10");
   const [intensity,setIntensity]=useState(initialIntensity);
   const pinned=presets.filter(p=>p.isPinned);
+  const allowCustomize=!isTourActive||tourStep===5;
+  const allowCustomEdit=!isTourActive||tourStep===5;
+  const allowStart=!isTourActive||tourStep===6;
+  const allowBack=!isTourActive;
   const handleStart=()=>{
     if(isTourActive&&onTourStartSession){
       const handled=onTourStartSession({showCustom,dur,freq,intensity,selected});
@@ -1053,18 +1073,18 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
           <div className="text-center"><h2 className="text-2xl font-black mb-2" style={{color:C.navy}}>Select Preset</h2><p className="text-gray-500 text-sm">Choose a preset or customize</p></div>
           <div className="rounded-xl p-4 flex items-center justify-between" style={{background:"#e8f9fb",border:`1.5px solid ${C.cyan}30`}}>
             <div><span className="text-sm font-bold text-gray-700">Starting Intensity</span><p className="text-[10px] text-gray-500 mt-0.5">Adjustable during session</p></div>
-            <IntensityStepper value={intensity} onChange={setIntensity}/>
+            <IntensityStepper value={intensity} onChange={setIntensity} disabled={isTourActive}/>
           </div>
           <div><span className="text-sm font-bold text-gray-500 block mb-2">Quick Start</span>
-            <button onClick={()=>{setSelected("default");setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all" style={{borderColor:selected==="default"&&!showCustom?C.cyan:"#e5e7eb",background:selected==="default"&&!showCustom?"#e8f9fb":"white"}}>
+            <button disabled={isTourActive} onClick={()=>{setSelected("default");setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected==="default"&&!showCustom?C.cyan:"#e5e7eb",background:selected==="default"&&!showCustom?"#e8f9fb":"white"}}>
               <div className="flex items-center justify-between"><div><span className="font-bold text-sm">Standard Session</span><span className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:`${C.cyan}20`,color:C.cyanDark}}>Default</span><p className="text-xs text-gray-400 mt-1">30 min · 10 Hz</p></div>{selected==="default"&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div>
             </button>
           </div>
-          {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
-          {!showCustom?<button onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className="w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50"><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1"/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1"/></div></div></Card>}
+          {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button disabled={isTourActive} key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
+          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-4 ring-cyan-300 animate-pulse")}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div></div></Card>}
           <div className="flex gap-3 pt-2">
-            <button onClick={onBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2"><ArrowLeft className="w-4 h-4"/>Back</button>
-            <button onClick={handleStart} disabled={!selected&&!showCustom} className="flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
+            <button disabled={!allowBack} onClick={onBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
+            <button onClick={handleStart} disabled={!selected&&!showCustom||!allowStart} className={cn("flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===6&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
           </div>
         </div></Card>
       </div>
@@ -1614,21 +1634,21 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
   return(
     <div className="fixed inset-0 z-[120] pointer-events-none">
       <div className={cn("absolute pointer-events-auto flex items-end gap-2 max-w-[calc(100%-1rem)]",s.pos)}>
-        <div className="relative rounded-2xl border border-gray-200 bg-white shadow-lg p-3 w-[min(300px,calc(100vw-5.5rem))]">
+        <div className="relative rounded-2xl border border-gray-200 bg-white shadow-lg p-4 w-[min(360px,calc(100vw-5.5rem))]">
           <div className="absolute -bottom-1.5 left-5 h-3 w-3 rotate-45 bg-white border-r border-b border-gray-200"/>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="font-black text-sm" style={{color:C.navy}}>{s.title}</h3>
-              <p className="text-xs text-gray-600 mt-1">{s.body}</p>
+              <h3 className="font-black text-xl leading-tight" style={{color:C.navy}}>{s.title}</h3>
+              <p className="text-lg text-gray-700 mt-2 leading-snug">{s.body}</p>
             </div>
-            <button onClick={onSkip} className="text-[10px] font-bold text-gray-500 hover:underline shrink-0">Skip</button>
+            <button onClick={onSkip} className="text-sm font-bold text-gray-500 hover:underline shrink-0">Skip</button>
           </div>
-          <div className="flex items-center justify-between mt-3">
-            <span className="text-[10px] text-gray-400">Step {step+1} of {total}</span>
+          <div className="flex items-center justify-between mt-3.5">
+            <span className="text-sm text-gray-500">Step {step+1} of {total}</span>
             {actionRequired?(
-              <span className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{background:`${C.peach}35`,color:C.peachDark}}>{actionLabel||"Complete the highlighted action"}</span>
+              <span className="text-sm font-bold px-2.5 py-1.5 rounded-lg" style={{background:`${C.peach}35`,color:C.peachDark}}>{actionLabel||"Complete the highlighted action"}</span>
             ):(
-              <button onClick={onNext} className="h-8 px-3 rounded-xl text-white text-xs font-bold" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>{isLast?"Finish":"Next"}</button>
+              <button onClick={onNext} className="h-10 px-4 rounded-xl text-white text-base font-bold" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>{isLast?"Finish":"Next"}</button>
             )}
           </div>
         </div>
@@ -1903,13 +1923,14 @@ export default function App(){
   },[isAuthenticated,tourStep]);
 
   const nav=useCallback((key)=>{
+    if(isTourActive&&[0,1,2,3,4,5,6,7,8].includes(tourStep??-1)) return;
     if(key==="today")setScreen("welcome");
     else if(key==="start-session"){if(isTourActive)return;setScreen("precheck");}
     else if(key==="guides"){setGuidesInit("menu");setScreen("guides");}
     else if(key==="settings")setScreen("settings");
     else if(key==="schedule")setScreen("schedule");
     else if(key==="diary")setScreen("diary");
-  },[isTourActive]);
+  },[isTourActive,tourStep]);
 
   if(!onboardingComplete){
     if(authStep==="start"){
@@ -1941,7 +1962,7 @@ export default function App(){
 
       {activeReminder&&<ReminderPopup alarm={activeReminder} onDismiss={()=>setActiveReminder(null)} onStartSession={()=>{setActiveReminder(null);handleStartSession();}} use24={use24}/>}
 
-      {screen==="welcome"&&<WelcomeScreen onStartSession={handleStartSession} onResumeSession={()=>{if(pausedSession){setDuration(pausedSession.duration);setFrequency(pausedSession.frequency);setIntensity(pausedSession.intensity);setScreen("session-resume");}}} pausedSession={pausedSession} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} onOpenCalendar={()=>setScreen("calendar")} use24={use24}/>}
+      {screen==="welcome"&&<WelcomeScreen onStartSession={handleStartSession} onResumeSession={()=>{if(pausedSession){setDuration(pausedSession.duration);setFrequency(pausedSession.frequency);setIntensity(pausedSession.intensity);setScreen("session-resume");}}} pausedSession={pausedSession} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} onOpenCalendar={()=>setScreen("calendar")} use24={use24} isTourActive={isTourActive} tourStep={tourStep}/>}
       {screen==="calendar"&&<UnifiedCalendar onBack={()=>setScreen("welcome")} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} use24={use24}/>}
       {screen==="schedule"&&<ScheduleScreen onNav={nav} alarms={alarms} onUpdateAlarms={setAlarms} use24={use24}/>}
       {screen==="diary"&&<DiaryScreen
@@ -1949,6 +1970,8 @@ export default function App(){
         diaryEntries={diaryEntries}
         onSaveDiary={setDiaryEntries}
         use24={use24}
+        isTourActive={isTourActive}
+        tourStep={tourStep}
         onTourDayOpen={handleTourDiaryDayOpen}
         onTourSymptomLog={handleTourDiarySymptomLog}
       />}
@@ -1961,6 +1984,7 @@ export default function App(){
         onViewDeviceSetup={()=>setScreen("guides-session-setup")}
         onViewCalibrationGuide={()=>setScreen("guides-session-cal")}
         isTourActive={isTourActive}
+        tourStep={tourStep}
         onTourIntensityChange={handleTourIntensityChange}
         onTourCheckboxChange={handleTourCheckboxChange}
         onTourContinue={handleTourPrecheckContinue}
@@ -1973,6 +1997,7 @@ export default function App(){
         presets={presets}
         onNav={nav}
         isTourActive={isTourActive}
+        tourStep={tourStep}
         onTourCustomizeOpen={handleTourCustomizeOpen}
         onTourCustomEdit={handleTourCustomEdit}
         onTourStartSession={handleTourStartFromPreset}
