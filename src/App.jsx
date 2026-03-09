@@ -1563,35 +1563,39 @@ function LoginScreen({profile,onLogin,onBackToStart}){
 function IntroCoachmark({step,total,onNext,onSkip}){
   const isLast=step===total-1;
   const steps=[
-    {title:"Guides",body:"Start in Guides to learn about PFD and your device.",arrow:"left"},
-    {title:"Understanding Guide",body:"Review the Understanding PFD & Neuromodulation guide first.",arrow:"left"},
-    {title:"Device Setup Guide",body:"Next, complete the device setup instructions.",arrow:"left"},
-    {title:"Calibration Guide",body:"Then review the calibration guide before sessions.",arrow:"left"},
-    {title:"Stimulation",body:"Use Home to start your stimulation workflow.",arrow:"center"},
-    {title:"Voiding Diary",body:"Log diary entries here to track symptoms.",arrow:"right-mid"},
-    {title:"Settings",body:"Use Settings to manage your profile and preferences.",arrow:"right"},
+    {title:"Guides",body:"Start in Guides to learn about PFD and your device.",pos:"bottom-28 left-3"},
+    {title:"Understanding Guide",body:"Open this guide first to understand treatment basics.",pos:"top-28 right-3"},
+    {title:"Device Setup Guide",body:"Next, review how to place the device correctly.",pos:"bottom-40 right-3"},
+    {title:"Calibration Guide",body:"Then check calibration so sensations are in the right order.",pos:"bottom-20 right-3"},
+    {title:"Stimulation",body:"This is where you'd start stimulation. During walkthrough, starting is disabled.",pos:"bottom-40 left-1/2 -translate-x-1/2"},
+    {title:"Voiding Diary",body:"Use Diary to log symptoms and trends.",pos:"bottom-28 right-20"},
+    {title:"Settings",body:"Use Settings to update profile, reminders, and preferences.",pos:"bottom-28 right-2"},
   ];
   const s=steps[step]||steps[0];
-  const arrowPos=s.arrow==="left"?"left-10":s.arrow==="center"?"left-1/2 -translate-x-1/2":s.arrow==="right-mid"?"right-20":"right-8";
   return(
     <div className="fixed inset-0 z-[120] pointer-events-none">
-      <div className={cn("absolute bottom-20",arrowPos)}>
-        <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[14px] border-l-transparent border-r-transparent border-t-white mx-auto"/>
-      </div>
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-28 w-[calc(100%-2rem)] max-w-md pointer-events-auto">
-        <Card className="p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="font-black text-base" style={{color:C.navy}}>{s.title}</h3>
-              <p className="text-sm text-gray-600 mt-1">{s.body}</p>
+      <div className={cn("absolute pointer-events-auto flex items-end gap-2 max-w-[calc(100%-1rem)]",s.pos)}>
+        <div className="relative rounded-2xl border border-gray-200 bg-white shadow-lg p-3 w-[min(300px,calc(100vw-5.5rem))]">
+          <div className="absolute -bottom-1.5 left-5 h-3 w-3 rotate-45 bg-white border-r border-b border-gray-200"/>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-black text-sm" style={{color:C.navy}}>{s.title}</h3>
+              <p className="text-xs text-gray-600 mt-1">{s.body}</p>
             </div>
-            <button onClick={onSkip} className="text-[10px] font-bold text-gray-500 hover:underline">Skip</button>
+            <button onClick={onSkip} className="text-[10px] font-bold text-gray-500 hover:underline shrink-0">Skip</button>
           </div>
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center justify-between mt-3">
             <span className="text-[10px] text-gray-400">Step {step+1} of {total}</span>
-            <button onClick={onNext} className="h-9 px-4 rounded-xl text-white text-sm font-bold" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>{isLast?"Finish":"Next"}</button>
+            <button onClick={onNext} className="h-8 px-3 rounded-xl text-white text-xs font-bold" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>{isLast?"Finish":"Next"}</button>
           </div>
-        </Card>
+        </div>
+        <div className="h-12 w-12 rounded-full border-2 border-white shadow-md flex items-center justify-center" style={{background:`linear-gradient(135deg,${C.cyan}25,${C.mint}25)`}}>
+          <div className="h-8 w-8 rounded-full bg-white/95 border border-gray-200 relative">
+            <div className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-gray-700"/>
+            <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-gray-700"/>
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 h-2 w-4 border-b-2 border-gray-700 rounded-b-full"/>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1644,6 +1648,7 @@ export default function App(){
   const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",raceEthnicity:"",use24:false,pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,fecal:false,constipation:false,pelvicPain:false}});
 
   const use24=settings.use24||false;
+  const isTourActive=tourStep!==null;
 
   useEffect(()=>{
     try{
@@ -1757,6 +1762,11 @@ export default function App(){
     setActiveReminder(null);
   };
 
+  const handleStartSession=()=>{
+    if(isTourActive) return;
+    setScreen("precheck");
+  };
+
   const nextTourStep=()=>{
     if(tourStep===null) return;
     if(tourStep>=6){finishTour();return;}
@@ -1778,12 +1788,12 @@ export default function App(){
 
   const nav=useCallback((key)=>{
     if(key==="today")setScreen("welcome");
-    else if(key==="start-session")setScreen("precheck");
+    else if(key==="start-session"){if(isTourActive)return;setScreen("precheck");}
     else if(key==="guides"){setGuidesInit("menu");setScreen("guides");}
     else if(key==="settings")setScreen("settings");
     else if(key==="schedule")setScreen("schedule");
     else if(key==="diary")setScreen("diary");
-  },[]);
+  },[isTourActive]);
 
   if(!onboardingComplete){
     if(authStep==="start"){
@@ -1813,9 +1823,9 @@ export default function App(){
     <div className="h-full w-full overflow-auto" style={{fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;0,9..40,900&display=swap');`}</style>
 
-      {activeReminder&&<ReminderPopup alarm={activeReminder} onDismiss={()=>setActiveReminder(null)} onStartSession={()=>{setActiveReminder(null);setScreen("precheck");}} use24={use24}/>}
+      {activeReminder&&<ReminderPopup alarm={activeReminder} onDismiss={()=>setActiveReminder(null)} onStartSession={()=>{setActiveReminder(null);handleStartSession();}} use24={use24}/>}
 
-      {screen==="welcome"&&<WelcomeScreen onStartSession={()=>setScreen("precheck")} onResumeSession={()=>{if(pausedSession){setDuration(pausedSession.duration);setFrequency(pausedSession.frequency);setIntensity(pausedSession.intensity);setScreen("session-resume");}}} pausedSession={pausedSession} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} onOpenCalendar={()=>setScreen("calendar")} use24={use24}/>}
+      {screen==="welcome"&&<WelcomeScreen onStartSession={handleStartSession} onResumeSession={()=>{if(pausedSession){setDuration(pausedSession.duration);setFrequency(pausedSession.frequency);setIntensity(pausedSession.intensity);setScreen("session-resume");}}} pausedSession={pausedSession} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} onOpenCalendar={()=>setScreen("calendar")} use24={use24}/>}
       {screen==="calendar"&&<UnifiedCalendar onBack={()=>setScreen("welcome")} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} use24={use24}/>}
       {screen==="schedule"&&<ScheduleScreen onNav={nav} alarms={alarms} onUpdateAlarms={setAlarms} use24={use24}/>}
       {screen==="diary"&&<DiaryScreen onNav={nav} diaryEntries={diaryEntries} onSaveDiary={setDiaryEntries} use24={use24}/>}
