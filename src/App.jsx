@@ -463,7 +463,7 @@ function AlarmCard({a,onEdit,onToggle,onDelete,formatSchedule,use24}){
 }
 
 // ─── Voiding Diary ────────────────────────────────────────────────────────────
-function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
+function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,onTourDayOpen,onTourSymptomLog}){
   const today=new Date();
   const ws=startOfWeek(today);
   const ms=startOfMonth(today);
@@ -485,6 +485,7 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
     const existing=monthEntries.find(e=>sameDay(e.date,day));
     setForm(existing?{urgencyEpisodes:existing.urgencyEpisodes,leakageEpisodes:existing.leakageEpisodes||0,daytimeVoids:existing.daytimeVoids||0,nighttimeVoids:existing.nighttimeVoids||0}:{urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
     setActiveDay(day);
+    onTourDayOpen?.(day);
   };
 
   const updateAndSave=(field,val)=>{
@@ -495,6 +496,7 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24}){
       const entry={id:existing?existing.id:Date.now().toString(),weekKey:getWeekKey(activeDay),date:new Date(activeDay),completed:true,...newForm};
       if(existing)onSaveDiary(diaryEntries.map(e=>e.id===existing.id?entry:e));
       else onSaveDiary([...diaryEntries,entry]);
+      onTourSymptomLog?.(field,newForm[field]);
     }
   };
 
@@ -1604,7 +1606,8 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
     {title:"Continue",body:"Now tap Continue to move to presets.",pos:"bottom-28 right-3"},
     {title:"Customize Preset",body:"Tap Customize, then edit duration or frequency.",pos:"bottom-28 right-3"},
     {title:"Start Button",body:"Tap Start Session to finish this tutorial. No stimulation will start.",pos:"bottom-28 right-3"},
-    {title:"Voiding Diary",body:"Use Diary to log symptoms and trends.",pos:"bottom-28 right-20"},
+    {title:"Open Diary Day",body:"Tap a date in the diary calendar to create or open an entry.",pos:"bottom-28 right-20"},
+    {title:"Log Symptoms",body:"Now add at least one symptom value using + or -.",pos:"bottom-28 right-20"},
     {title:"Settings",body:"Use Settings for profile, reminders, and logout.",pos:"bottom-28 right-2"},
   ];
   const s=steps[step]||steps[0];
@@ -1865,10 +1868,23 @@ export default function App(){
     return true;
   };
 
+  const handleTourDiaryDayOpen=()=>{
+    if(!isTourActive||tourStep!==7) return;
+    setTourStep(8);
+  };
+
+  const handleTourDiarySymptomLog=(field,value)=>{
+    if(!isTourActive||tourStep!==8) return;
+    if(typeof value==="number"&&value>0){
+      setTourStep(9);
+      setScreen("settings");
+    }
+  };
+
   const nextTourStep=()=>{
     if(tourStep===null) return;
-    if([1,2,3,4,5,6].includes(tourStep)) return;
-    if(tourStep>=8){finishTour();return;}
+    if([1,2,3,4,5,6,7,8].includes(tourStep)) return;
+    if(tourStep>=9){finishTour();return;}
     setTourStep(tourStep+1);
   };
 
@@ -1882,8 +1898,8 @@ export default function App(){
     if(tourStep===1){setScreen("welcome");return;}
     if(tourStep===2||tourStep===3||tourStep===4){setScreen("precheck");return;}
     if(tourStep===5||tourStep===6){setScreen("preset");return;}
-    if(tourStep===7){setScreen("diary");return;}
-    if(tourStep===8){setScreen("settings");}
+    if(tourStep===7||tourStep===8){setScreen("diary");return;}
+    if(tourStep===9){setScreen("settings");}
   },[isAuthenticated,tourStep]);
 
   const nav=useCallback((key)=>{
@@ -1928,7 +1944,14 @@ export default function App(){
       {screen==="welcome"&&<WelcomeScreen onStartSession={handleStartSession} onResumeSession={()=>{if(pausedSession){setDuration(pausedSession.duration);setFrequency(pausedSession.frequency);setIntensity(pausedSession.intensity);setScreen("session-resume");}}} pausedSession={pausedSession} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} onOpenCalendar={()=>setScreen("calendar")} use24={use24}/>}
       {screen==="calendar"&&<UnifiedCalendar onBack={()=>setScreen("welcome")} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} use24={use24}/>}
       {screen==="schedule"&&<ScheduleScreen onNav={nav} alarms={alarms} onUpdateAlarms={setAlarms} use24={use24}/>}
-      {screen==="diary"&&<DiaryScreen onNav={nav} diaryEntries={diaryEntries} onSaveDiary={setDiaryEntries} use24={use24}/>}
+      {screen==="diary"&&<DiaryScreen
+        onNav={nav}
+        diaryEntries={diaryEntries}
+        onSaveDiary={setDiaryEntries}
+        use24={use24}
+        onTourDayOpen={handleTourDiaryDayOpen}
+        onTourSymptomLog={handleTourDiarySymptomLog}
+      />}
 
       {/* Precheck: two guide buttons route to session-context guide screens */}
       {screen==="precheck"&&<PreCheckScreen
@@ -1980,10 +2003,10 @@ export default function App(){
       {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout}/>}
       {tourStep!==null&&<IntroCoachmark
         step={tourStep}
-        total={9}
+        total={10}
         onNext={nextTourStep}
         onSkip={finishTour}
-        actionRequired={[1,2,3,4,5,6].includes(tourStep)}
+        actionRequired={[1,2,3,4,5,6,7,8].includes(tourStep)}
         actionLabel={
           tourStep===1?"Tap Start Session":
           tourStep===2?"Adjust intensity":
@@ -1991,6 +2014,8 @@ export default function App(){
           tourStep===4?"Tap Continue":
           tourStep===5?"Customize and edit values":
           tourStep===6?"Tap Start Session (simulated)":
+          tourStep===7?"Tap a diary date":
+          tourStep===8?"Log at least one symptom":
           ""
         }
       />}
