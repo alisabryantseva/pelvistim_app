@@ -253,6 +253,9 @@ function getPrimaryDiagnosis(pfdTypes){
 
 // ─── Schedule Screen ──────────────────────────────────────────────────────────
 const LEAD_OPTIONS=[5,10,15,30];
+const DEFAULT_ALARMS=[
+  {id:"d2",time:"19:30",label:"Evening Session",alarmType:"autostart",isRecurring:true,days:{0:true,1:true,2:true,3:true,4:true,5:true,6:true},active:false},
+];
 
 function ScheduleScreen({onNav,alarms,onUpdateAlarms,use24}){
   const [editAlarm,setEditAlarm]=useState(null);
@@ -1111,7 +1114,7 @@ function PelvicFloorIllustration(){
 
 // GuidesScreen now accepts fromSession prop and onBackToSession callback
 // When fromSession=true: exit/back returns to precheck; device-setup shows "Next: Calibration" button
-function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBackToSession}){
+function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBackToSession,onReplayIntro}){
   const [section,setSection]=useState(initialSection);
   const [step,setStep]=useState(0);
   const [expandedFaq,setExpandedFaq]=useState(null);
@@ -1257,6 +1260,11 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
     <div className={cn("min-h-screen pb-28",BG)}>
       <div className="max-w-2xl mx-auto p-6 space-y-5">
         <div><h1 className="text-2xl font-black" style={{color:C.navy}}>Guides</h1><p className="text-sm text-gray-500">Learn about your condition and device</p></div>
+        {!fromSession&&onReplayIntro&&(
+          <button onClick={onReplayIntro} className="w-full h-10 rounded-xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50">
+            Replay Initial Walkthrough
+          </button>
+        )}
         <Card className="p-5 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]" style={{borderLeft:`5px solid ${C.cyan}`,background:"linear-gradient(135deg,#e8f9fb,white)"}} onClick={()=>setSection("learn")}>
           <div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.cyan}20`}}><Brain className="w-6 h-6" style={{color:C.navy}}/></div><div><h2 className="font-black text-sm" style={{color:C.navy}}>Understanding PFD & Neuromodulation</h2><p className="text-xs text-gray-500 mt-0.5">Learn what PFD is and how treatment works</p></div></div><ChevronRight className="w-5 h-5 text-gray-400 shrink-0"/></div>
         </Card>
@@ -1284,7 +1292,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
-function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets}){
+function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}){
   const [tab,setTab]=useState("profile");
   const [form,setForm]=useState(settings);
   const [saved,setSaved]=useState(false);
@@ -1386,6 +1394,11 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets}){
             )}
           </div>
         )}
+      </div>
+      <div className="max-w-2xl mx-auto px-6 pb-4">
+        <button onClick={onLogout} className="w-full h-11 rounded-2xl border-2 border-red-200 bg-white text-sm font-bold text-red-600 hover:bg-red-50">
+          Log Out
+        </button>
       </div>
       <BottomNav current="settings" onNav={onNav}/>
     </div>
@@ -1612,9 +1625,7 @@ export default function App(){
   const [sessions,setSessions]=useState([]);
   const [diaryEntries,setDiaryEntries]=useState([]);
   const [presets,setPresets]=useState([]);
-  const [alarms,setAlarms]=useState([
-    {id:"d2",time:"19:30",label:"Evening Session",alarmType:"autostart",isRecurring:true,days:{0:true,1:true,2:true,3:true,4:true,5:true,6:true},active:false},
-  ]);
+  const [alarms,setAlarms]=useState(DEFAULT_ALARMS);
   const [intensity,setIntensity]=useState(5.0);
   const [duration,setDuration]=useState(30);
   const [frequency,setFrequency]=useState(10);
@@ -1641,6 +1652,10 @@ export default function App(){
       const parsed=JSON.parse(raw);
       if(parsed?.profile) setAuthProfile(parsed.profile);
       if(parsed?.settings) setStoredSettings(parsed.settings);
+      if(Array.isArray(parsed?.sessions)) setSessions(parsed.sessions);
+      if(Array.isArray(parsed?.diaryEntries)) setDiaryEntries(parsed.diaryEntries);
+      if(Array.isArray(parsed?.presets)) setPresets(parsed.presets);
+      if(Array.isArray(parsed?.alarms)) setAlarms(parsed.alarms);
       setOnboardingComplete(!!parsed?.onboardingComplete);
       setIntroDone(!!parsed?.introDone);
       if(parsed?.onboardingComplete&&parsed?.profile) setAuthStep("start");
@@ -1649,9 +1664,18 @@ export default function App(){
 
   useEffect(()=>{
     try{
-      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({profile:authProfile,settings:storedSettings,onboardingComplete,introDone}));
+      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({
+        profile:authProfile,
+        settings:storedSettings,
+        onboardingComplete,
+        introDone,
+        sessions,
+        diaryEntries,
+        presets,
+        alarms,
+      }));
     }catch{}
-  },[authProfile,storedSettings,onboardingComplete,introDone]);
+  },[authProfile,storedSettings,onboardingComplete,introDone,sessions,diaryEntries,presets,alarms]);
 
   useEffect(()=>{
     if(!isAuthenticated) return;
@@ -1665,6 +1689,10 @@ export default function App(){
   const handleSaveSettings=(s)=>{setSettings(s);setStoredSettings(s);};
 
   const handleOnboardingComplete=({profile,settings:setupSettings})=>{
+    setSessions([]);
+    setDiaryEntries([]);
+    setPresets([]);
+    setAlarms(DEFAULT_ALARMS);
     setAuthProfile(profile);
     setSettings(prev=>({
       ...prev,
@@ -1712,6 +1740,21 @@ export default function App(){
     setTourStep(null);
     setIntroDone(true);
     setScreen("welcome");
+  };
+
+  const handleReplayIntro=()=>{
+    setIntroDone(false);
+    setTourStep(0);
+    setGuidesInit("menu");
+    setScreen("guides");
+  };
+
+  const handleLogout=()=>{
+    setIsAuthenticated(false);
+    setAuthStep("start");
+    setScreen("welcome");
+    setTourStep(null);
+    setActiveReminder(null);
   };
 
   const nextTourStep=()=>{
@@ -1792,7 +1835,7 @@ export default function App(){
       {screen==="complete"&&<CompleteScreen onHome={()=>setScreen("welcome")} startTime={lastStart} endTime={lastEnd} onNav={nav} use24={use24}/>}
 
       {/* Guides accessed from main nav — normal back behavior */}
-      {screen==="guides"&&<GuidesScreen key={`guides-${guidesInit}-${tourStep===null?"normal":tourStep}`} onBack={()=>setScreen("welcome")} onNav={nav} initialSection={guidesInit}/>}
+      {screen==="guides"&&<GuidesScreen key={`guides-${guidesInit}-${tourStep===null?"normal":tourStep}`} onBack={()=>setScreen("welcome")} onNav={nav} initialSection={guidesInit} onReplayIntro={handleReplayIntro}/>}
 
       {/* Guides accessed from precheck — exit returns to precheck */}
       {screen==="guides-session-setup"&&<GuidesScreen
@@ -1810,7 +1853,7 @@ export default function App(){
         onBackToSession={()=>setScreen("precheck")}
       />}
 
-      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets}/>}
+      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout}/>}
       {tourStep!==null&&<IntroCoachmark step={tourStep} total={7} onNext={nextTourStep} onSkip={finishTour}/>}
     </div>
   );
