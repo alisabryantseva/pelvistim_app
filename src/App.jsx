@@ -90,6 +90,7 @@ const fmtAlarmTime=(timeStr,use24)=>{
 };
 
 const BG="bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100";
+const TOUR_TARGET="ring-4 ring-cyan-300 animate-pulse outline outline-4 outline-red-500 outline-offset-2";
 
 // ─── PelviStim Logo SVG ───────────────────────────────────────────────────────
 function PelviStimLogo({size=36}){
@@ -495,6 +496,10 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
     const newForm={...form,[field]:Math.max(0,val)};
     setForm(newForm);
     if(activeDay){
+      if(isTourActive){
+        onTourSymptomLog?.(field,newForm[field]);
+        return;
+      }
       const existing=diaryEntries.find(e=>sameDay(e.date,activeDay));
       const entry={id:existing?existing.id:Date.now().toString(),weekKey:getWeekKey(activeDay),date:new Date(activeDay),completed:true,...newForm};
       if(existing)onSaveDiary(diaryEntries.map(e=>e.id===existing.id?entry:e));
@@ -537,7 +542,7 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
       <div className="max-w-2xl mx-auto p-6 space-y-5">
         <div><h1 className="text-2xl font-bold tracking-tight">Voiding Diary</h1><p className="text-sm text-gray-500">Track at least 3 days this month — we extrapolate the rest</p></div>
 
-        <Card className={cn("p-5",isTourActive&&tourStep===7&&"ring-4 ring-cyan-300 animate-pulse")}>
+        <Card className={cn("p-5",isTourActive&&tourStep===7&&TOUR_TARGET)}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-bold">This Month</span>
             <span className="text-xs font-bold px-3 py-1 rounded-full" style={{background:completedDays.length>=3?"#e8faf4":"#e8f9fb",color:completedDays.length>=3?C.mintDark:C.cyanDark}}>{completedDays.length}/3 days logged</span>
@@ -596,9 +601,9 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes-1)} className={cn("h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40",isTourActive&&tourStep===8&&"ring-4 ring-cyan-300 animate-pulse")}>−</button>
+                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes-1)} className={cn("h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40",isTourActive&&tourStep===8&&TOUR_TARGET)}>−</button>
                 <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.cyan}}>{form.urgencyEpisodes}</span>
-                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className={cn("h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg text-white disabled:opacity-40",isTourActive&&tourStep===8&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`${C.cyan}20`,color:C.cyanDark}}>+</button>
+                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className={cn("h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg text-white disabled:opacity-40",isTourActive&&tourStep===8&&TOUR_TARGET)} style={{background:`${C.cyan}20`,color:C.cyanDark}}>+</button>
               </div>
             </div>
 
@@ -802,7 +807,7 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
         {forceTourStart?(
           <Card className="p-6 text-center" style={{background:`linear-gradient(135deg, #e8f9fb, #e8ecff)`,borderColor:`${C.cyan}40`,borderWidth:2}}>
             <h2 className="text-2xl font-black mb-5" style={{color:C.navy}}>Tap Start Session</h2>
-            <button onClick={onStartSession} className={cn("h-12 px-8 rounded-2xl text-white font-bold text-base inline-flex items-center gap-2",isTourActive&&tourStep===1&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 6px 20px ${C.navy}50`}}>
+            <button onClick={onStartSession} className={cn("h-12 px-8 rounded-2xl text-white font-bold text-base inline-flex items-center gap-2",isTourActive&&tourStep===1&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 6px 20px ${C.navy}50`}}>
               <Activity className="w-5 h-5"/>Start Session
             </button>
           </Card>
@@ -1005,7 +1010,7 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
             </button>
           </div>
 
-          <div className={cn("flex flex-col items-center py-4",isTourActive&&tourStep===2&&"ring-4 ring-cyan-300 rounded-2xl animate-pulse")}>
+          <div className={cn("flex flex-col items-center py-4",isTourActive&&tourStep===2&&cn(TOUR_TARGET,"rounded-2xl"))}>
             <span className="text-sm font-semibold text-gray-500 mb-4">Stimulation Intensity (0-10)</span>
             <IntensityStepper value={intensity} onChange={setIntensityWithTour} large disabled={!allowIntensity}/>
           </div>
@@ -1016,7 +1021,7 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
               {state:electrode,set:toggleElectrode,label:"Tingling at electrode site",sub:"First sensation where the electrode touches the skin",num:1,prev:true},
               {state:spread,set:toggleSpread,label:"Tingling migrates to heel and/or toes",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
             ].map(({state,set,label,sub,num,prev})=>(
-              <button key={num} disabled={!prev||!allowChecks} onClick={()=>prev&&allowChecks&&set(!state)} className={cn("flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all",isTourActive&&tourStep===3&&"ring-4 ring-cyan-300 animate-pulse")} style={{opacity:!prev||!allowChecks?0.4:1,cursor:!prev||!allowChecks?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
+              <button key={num} disabled={!prev||!allowChecks} onClick={()=>prev&&allowChecks&&set(!state)} className={cn("flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all",isTourActive&&tourStep===3&&TOUR_TARGET)} style={{opacity:!prev||!allowChecks?0.4:1,cursor:!prev||!allowChecks?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
                 <Checkbox checked={state} onChange={prev?set:()=>{}}/>
                 <div>
                   <div className="font-semibold text-sm flex items-center gap-2">
@@ -1031,7 +1036,7 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
           {canContinue&&<div className="flex items-center gap-2 p-3 rounded-xl text-sm" style={{background:"#e8faf4",border:`1px solid ${C.mint}40`,color:C.mintDark}}><CheckCircle2 className="w-4 h-4 shrink-0"/>Calibration confirmed. Ready to start.</div>}
           <div className="flex gap-3 pt-2">
             <button disabled={!allowBack} onClick={onBack} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
-            <button onClick={handleContinue} disabled={!canContinue||!allowContinue} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===4&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
+            <button onClick={handleContinue} disabled={!canContinue||!allowContinue} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===4&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
           </div>
         </div></Card>
       </div>
@@ -1081,10 +1086,10 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
             </button>
           </div>
           {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button disabled={isTourActive} key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
-          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-4 ring-cyan-300 animate-pulse")}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div></div></Card>}
+          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&TOUR_TARGET)}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-red-400")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-red-400")}/></div></div></Card>}
           <div className="flex gap-3 pt-2">
             <button disabled={!allowBack} onClick={onBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
-            <button onClick={handleStart} disabled={!selected&&!showCustom||!allowStart} className={cn("flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===6&&"ring-4 ring-cyan-300 animate-pulse")} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
+            <button onClick={handleStart} disabled={!selected&&!showCustom||!allowStart} className={cn("flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===6&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
           </div>
         </div></Card>
       </div>
@@ -1170,14 +1175,22 @@ function PelvicFloorIllustration(){
 
 // GuidesScreen now accepts fromSession prop and onBackToSession callback
 // When fromSession=true: exit/back returns to precheck; device-setup shows "Next: Calibration" button
-function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBackToSession,onReplayIntro}){
+function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBackToSession,onReplayIntro,forceSequence=false,onTourGuidesComplete}){
   const [section,setSection]=useState(initialSection);
   const [step,setStep]=useState(0);
   const [expandedFaq,setExpandedFaq]=useState(null);
   const goToMenu=()=>setSection("menu");
+  const lockToSequence=forceSequence&&!fromSession;
+
+  useEffect(()=>{
+    if(lockToSequence&&section==="menu"){
+      setSection("learn");
+    }
+  },[lockToSequence,section]);
 
   // Back/exit target: if fromSession, go back to precheck; otherwise back to guides menu or main back
   const handleExit=()=>{
+    if(lockToSequence) return;
     if(fromSession&&onBackToSession) onBackToSession();
     else onBack();
   };
@@ -1207,13 +1220,18 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
       <div className={cn("min-h-screen pb-28",BG)}>
         <div className="max-w-2xl mx-auto p-6 space-y-5">
           <div className="flex items-center gap-3">
-            <button onClick={()=>{if(step>0)setStep(step-1);else{goToMenu();if(fromSession&&onBackToSession)onBackToSession();}}} className="h-10 w-10 rounded-xl bg-white/70 flex items-center justify-center">
+            <button onClick={()=>{
+              if(step>0){setStep(step-1);return;}
+              if(lockToSequence){setSection("learn");return;}
+              goToMenu();
+              if(fromSession&&onBackToSession)onBackToSession();
+            }} className="h-10 w-10 rounded-xl bg-white/70 flex items-center justify-center">
               <ChevronLeft className="w-5 h-5 text-gray-600"/>
             </button>
             <h1 className="text-xl font-black flex-1" style={{color:C.navy}}>Device Setup Guide</h1>
-            <button onClick={handleExit} className="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
+            {!lockToSequence&&<button onClick={handleExit} className="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
               {fromSession?"Back to Setup":"Exit Guide"}
-            </button>
+            </button>}
           </div>
           <Card className="p-7">
             <div className="flex justify-center gap-2 mb-6">{steps.map((_,i)=><div key={i} className="h-2.5 rounded-full transition-all" style={{width:i===step?24:10,background:i===step?C.navy:i<step?C.cyan:"#e5e7eb"}}/>)}</div>
@@ -1240,7 +1258,12 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
             <div className="flex gap-3 mt-6">
               {step>0&&<button onClick={()=>setStep(step-1)} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2"><ArrowLeft className="w-4 h-4"/>Previous</button>}
               {!isLast&&<button onClick={()=>setStep(step+1)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Next<ChevronRight className="w-4 h-4"/></button>}
-              {isLast&&!fromSession&&<button onClick={goToMenu} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}><CheckCircle2 className="w-4 h-4"/>Done — Back to Guides</button>}
+              {isLast&&!fromSession&&!lockToSequence&&<button onClick={goToMenu} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}><CheckCircle2 className="w-4 h-4"/>Done — Back to Guides</button>}
+              {isLast&&!fromSession&&lockToSequence&&(
+                <button onClick={()=>setSection("calibration")} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+                  <ArrowRight className="w-4 h-4"/>Next Guide: Calibration
+                </button>
+              )}
               {isLast&&fromSession&&(
                 <button onClick={()=>setSection("calibration")} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
                   <ArrowRight className="w-4 h-4"/>Next: Calibration Guide
@@ -1265,9 +1288,9 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
         <div className="flex items-center gap-3">
           <button onClick={()=>goToMenu()} className="h-10 w-10 rounded-xl bg-white/70 flex items-center justify-center"><ChevronLeft className="w-5 h-5 text-gray-600"/></button>
           <h1 className="text-xl font-black flex-1" style={{color:C.navy}}>Calibration Guide</h1>
-          <button onClick={handleExit} className="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600">
+          {!lockToSequence&&<button onClick={handleExit} className="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600">
             {fromSession?"Back to Setup":"Exit Guide"}
-          </button>
+          </button>}
         </div>
         <Card className="p-7">
           <div className="text-center mb-5"><div className="mx-auto h-14 w-14 rounded-2xl flex items-center justify-center mb-3" style={{background:`linear-gradient(135deg,${C.cyan}20,${C.navy}20)`}}><BookOpen className="w-7 h-7" style={{color:C.navy}}/></div><h2 className="text-xl font-black" style={{color:C.navy}}>Sensation Progression</h2></div>
@@ -1290,9 +1313,14 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
               <li>• Contact the manufacturer if you cannot achieve sensation</li>
             </ul>
           </div>
-          <button onClick={handleExit} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
+          {!lockToSequence&&<button onClick={handleExit} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
             <CheckCircle2 className="w-4 h-4"/>{fromSession?"Done — Back to Setup":"Done — Back to Guides"}
-          </button>
+          </button>}
+          {lockToSequence&&(
+            <button onClick={onTourGuidesComplete} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
+              <CheckCircle2 className="w-4 h-4"/>Finish Guides and Continue
+            </button>
+          )}
         </Card>
       </div>
       <BottomNav current={fromSession?"start-session":"guides"} onNav={k=>k==="guides"?(fromSession?handleExit():goToMenu()):onNav(k)}/>
@@ -1306,6 +1334,11 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
         <Card className="p-5"><div className="flex items-center gap-2 mb-3"><Heart className="w-5 h-5 text-pink-500"/><h2 className="font-black text-base" style={{color:C.navy}}>What is the Pelvic Floor?</h2></div><p className="text-sm text-gray-600 leading-relaxed mb-4">The pelvic floor is a group of muscles at the base of your pelvis — like a hammock supporting your bladder, bowel, and uterus. When these muscles weaken, it causes problems with bladder and bowel control.</p><PelvicFloorIllustration/></Card>
         <Card className="p-5" style={{background:"linear-gradient(135deg,#e8faf4,#e8f9fb)",border:"none"}}><div className="flex items-center gap-2 mb-3"><Shield className="w-5 h-5" style={{color:C.mint}}/><h2 className="font-black text-base" style={{color:C.navy}}>What to Expect</h2></div><div className="space-y-3 text-sm text-gray-600"><div className="flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{color:C.mint}}/><p><strong>During a session:</strong> Gentle tingling near ankle — never painful.</p></div><div className="flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{color:C.mint}}/><p><strong>Recommended:</strong> Daily sessions of 30 minutes (adjustable).</p></div><div className="flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{color:C.mint}}/><p><strong>Timeline:</strong> Most see improvement in 6–8 weeks with daily use.</p></div></div></Card>
         <Card className="p-5"><div className="flex items-center gap-2 mb-3"><HelpCircle className="w-5 h-5" style={{color:C.cyan}}/><h2 className="font-black text-base" style={{color:C.navy}}>Frequently Asked Questions</h2></div><div className="space-y-1">{faqs.map((faq,i)=>(<div key={i}><button onClick={()=>setExpandedFaq(expandedFaq===i?null:i)} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 text-left"><span className="font-bold text-sm pr-2">{faq.q}</span>{expandedFaq===i?<ChevronUp className="w-4 h-4 text-gray-400 shrink-0"/>:<ChevronDown className="w-4 h-4 text-gray-400 shrink-0"/>}</button>{expandedFaq===i&&<div className="px-3 pb-3"><p className="text-xs text-gray-600 rounded-lg p-3 leading-relaxed" style={{background:"#e8f9fb"}}>{faq.a}</p></div>}</div>))}</div></Card>
+        {lockToSequence&&(
+          <button onClick={()=>{setStep(0);setSection("device-setup");}} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+            Next Guide: Device Setup <ArrowRight className="w-4 h-4"/>
+          </button>
+        )}
       </div>
       <BottomNav current="guides" onNav={k=>k==="guides"?goToMenu():onNav(k)}/>
     </div>
@@ -1348,7 +1381,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
-function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}){
+function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout,isAuthenticated=false,onOpenAuthStart}){
   const [tab,setTab]=useState("profile");
   const [form,setForm]=useState(settings);
   const [saved,setSaved]=useState(false);
@@ -1359,6 +1392,22 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
   const dx=primaryDx?PSEUDODIAGNOSIS[primaryDx]:null;
 
   const toggle24=(v)=>{ const nf={...form,use24:v}; setForm(nf); onSave(nf); };
+
+  if(!isAuthenticated){
+    return(
+      <div className={cn("min-h-screen pb-28",BG)}>
+        <div className="max-w-2xl mx-auto p-6 space-y-5">
+          <div><h1 className="text-2xl font-black" style={{color:C.navy}}>Settings</h1><p className="text-sm text-gray-500">Log in or create an account from here</p></div>
+          <Card className="p-6">
+            <h2 className="text-lg font-black mb-1" style={{color:C.navy}}>Account Required for Sync</h2>
+            <p className="text-sm text-gray-500 mb-4">Create or log into an account in Settings to save and sync your data.</p>
+            <button onClick={onOpenAuthStart} className="w-full h-11 rounded-2xl text-white font-bold text-sm" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Log In or Create Account</button>
+          </Card>
+        </div>
+        <BottomNav current="settings" onNav={onNav}/>
+      </div>
+    );
+  }
 
   return(
     <div className={cn("min-h-screen pb-28",BG)}>
@@ -1619,7 +1668,7 @@ function LoginScreen({profile,onLogin,onBackToStart}){
 function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLabel=""}){
   const isLast=step===total-1;
   const steps=[
-    {title:"Guides",body:"I will walk you through setup. Tap Next to begin.",pos:"bottom-28 left-3"},
+    {title:"Guides",body:"Start here: complete the guides in order (Learn, Device Setup, Calibration).",pos:"bottom-28 left-3"},
     {title:"Start Stimulation",body:"Tap Start Session on Home to begin the guided setup.",pos:"bottom-40 left-1/2 -translate-x-1/2"},
     {title:"Adjust Intensity",body:"Use + or − to change intensity at least once.",pos:"bottom-28 right-3"},
     {title:"Confirm Sensations",body:"Check both sensation boxes to continue.",pos:"bottom-28 right-3"},
@@ -1652,11 +1701,14 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
             )}
           </div>
         </div>
-        <div className="h-12 w-12 rounded-full border-2 border-white shadow-md flex items-center justify-center" style={{background:`linear-gradient(135deg,${C.cyan}25,${C.mint}25)`}}>
-          <div className="h-8 w-8 rounded-full bg-white/95 border border-gray-200 relative">
-            <div className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-gray-700"/>
-            <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-gray-700"/>
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 h-2 w-4 border-b-2 border-gray-700 rounded-b-full"/>
+        <div className="h-14 w-14 rounded-full border-2 border-white shadow-md flex items-center justify-center relative" style={{background:`linear-gradient(135deg,#f59e0b33,#f9731633)`}}>
+          <div className="absolute -top-1.5 left-2.5 h-3.5 w-3.5 rounded-full border border-amber-300 bg-amber-200"/>
+          <div className="absolute -top-1.5 right-2.5 h-3.5 w-3.5 rounded-full border border-amber-300 bg-amber-200"/>
+          <div className="h-9 w-9 rounded-full bg-amber-100 border border-amber-300 relative">
+            <div className="absolute top-2.5 left-2 h-1.5 w-1.5 rounded-full bg-amber-900"/>
+            <div className="absolute top-2.5 right-2 h-1.5 w-1.5 rounded-full bg-amber-900"/>
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 h-3 w-4 rounded-full bg-amber-200 border border-amber-300"/>
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-2.5 h-1.5 w-1.5 rounded-full bg-amber-700"/>
           </div>
         </div>
       </div>
@@ -1758,10 +1810,6 @@ export default function App(){
   const handleSaveSettings=(s)=>{setSettings(s);setStoredSettings(s);};
 
   const handleOnboardingComplete=({profile,settings:setupSettings})=>{
-    setSessions([]);
-    setDiaryEntries([]);
-    setPresets([]);
-    setAlarms(DEFAULT_ALARMS);
     setAuthProfile(profile);
     setSettings(prev=>({
       ...prev,
@@ -1901,9 +1949,15 @@ export default function App(){
     }
   };
 
+  const handleTourGuidesComplete=()=>{
+    if(!isTourActive||tourStep!==0) return;
+    setTourStep(1);
+    setScreen("welcome");
+  };
+
   const nextTourStep=()=>{
     if(tourStep===null) return;
-    if([1,2,3,4,5,6,7,8].includes(tourStep)) return;
+    if([0,1,2,3,4,5,6,7,8].includes(tourStep)) return;
     if(tourStep>=9){finishTour();return;}
     setTourStep(tourStep+1);
   };
@@ -1912,7 +1966,7 @@ export default function App(){
     if(!isAuthenticated||tourStep===null) return;
     if(tourStep===0){
       setScreen("guides");
-      setGuidesInit("menu");
+      setGuidesInit("learn");
       return;
     }
     if(tourStep===1){setScreen("welcome");return;}
@@ -1931,30 +1985,6 @@ export default function App(){
     else if(key==="schedule")setScreen("schedule");
     else if(key==="diary")setScreen("diary");
   },[isTourActive,tourStep]);
-
-  if(!onboardingComplete){
-    if(authStep==="start"){
-      return <AuthLandingScreen hasAccount={false} onChooseLogin={()=>setAuthStep("login")} onChooseCreate={()=>setAuthStep("create")}/>;
-    }
-    if(authStep==="login"){
-      return <LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setAuthStep("start")}/>;
-    }
-    return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
-  }
-
-  if(onboardingComplete&&!authProfile){
-    return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
-  }
-
-  if(!isAuthenticated){
-    if(authStep==="start"){
-      return <AuthLandingScreen hasAccount={!!authProfile} onChooseLogin={()=>setAuthStep("login")} onChooseCreate={()=>setAuthStep("create")}/>;
-    }
-    if(authStep==="create"){
-      return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
-    }
-    return <LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setAuthStep("start")}/>;
-  }
 
   return(
     <div className="h-full w-full overflow-auto" style={{fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif"}}>
@@ -2007,7 +2037,11 @@ export default function App(){
       {screen==="complete"&&<CompleteScreen onHome={()=>setScreen("welcome")} startTime={lastStart} endTime={lastEnd} onNav={nav} use24={use24}/>}
 
       {/* Guides accessed from main nav — normal back behavior */}
-      {screen==="guides"&&<GuidesScreen key={`guides-${guidesInit}-${tourStep===null?"normal":tourStep}`} onBack={()=>setScreen("welcome")} onNav={nav} initialSection={guidesInit} onReplayIntro={handleReplayIntro}/>}
+      {screen==="guides"&&(
+        isTourActive&&tourStep===0
+          ? <GuidesScreen key={`guides-tour-${tourStep}`} onBack={()=>setScreen("welcome")} onNav={nav} initialSection="learn" onReplayIntro={isAuthenticated?handleReplayIntro:undefined} forceSequence onTourGuidesComplete={handleTourGuidesComplete}/>
+          : <GuidesScreen key={`guides-${guidesInit}-${tourStep===null?"normal":tourStep}`} onBack={()=>setScreen("welcome")} onNav={nav} initialSection={guidesInit} onReplayIntro={isAuthenticated?handleReplayIntro:undefined}/>
+      )}
 
       {/* Guides accessed from precheck — exit returns to precheck */}
       {screen==="guides-session-setup"&&<GuidesScreen
@@ -2025,14 +2059,18 @@ export default function App(){
         onBackToSession={()=>setScreen("precheck")}
       />}
 
-      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout}/>}
+      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout} isAuthenticated={isAuthenticated} onOpenAuthStart={()=>setScreen("settings-auth-start")}/>}
+      {screen==="settings-auth-start"&&<AuthLandingScreen hasAccount={!!authProfile} onChooseLogin={()=>setScreen("settings-auth-login")} onChooseCreate={()=>setScreen("settings-auth-create")}/>}
+      {screen==="settings-auth-login"&&<LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setScreen("settings-auth-start")}/>}
+      {screen==="settings-auth-create"&&<OnboardingScreen onComplete={handleOnboardingComplete}/>}
       {tourStep!==null&&<IntroCoachmark
         step={tourStep}
         total={10}
         onNext={nextTourStep}
         onSkip={finishTour}
-        actionRequired={[1,2,3,4,5,6,7,8].includes(tourStep)}
+        actionRequired={[0,1,2,3,4,5,6,7,8].includes(tourStep)}
         actionLabel={
+          tourStep===0?"Finish all 3 guides":
           tourStep===1?"Tap Start Session":
           tourStep===2?"Adjust intensity":
           tourStep===3?"Check both boxes":
