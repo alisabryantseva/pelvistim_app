@@ -945,11 +945,32 @@ function UnifiedCalendar({onBack,onNav,sessions,diaryEntries,use24}){
 
 // ─── Pre-Check ────────────────────────────────────────────────────────────────
 // onViewDeviceSetup and onViewCalibrationGuide now route to session-context guide screens
-function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGuide,onNav}){
+function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGuide,onNav,isTourActive=false,onTourIntensityChange,onTourCheckboxChange,onTourContinue}){
   const [intensity,setIntensity]=useState(1.0);
   const [electrode,setElectrode]=useState(false);
   const [spread,setSpread]=useState(false);
   const canContinue=electrode&&spread;
+  const setIntensityWithTour=(v)=>{
+    setIntensity(v);
+    onTourIntensityChange?.(v);
+  };
+  const toggleElectrode=()=>{
+    const next=!electrode;
+    setElectrode(next);
+    onTourCheckboxChange?.("electrode",next);
+  };
+  const toggleSpread=()=>{
+    const next=!spread;
+    setSpread(next);
+    onTourCheckboxChange?.("spread",next);
+  };
+  const handleContinue=()=>{
+    if(isTourActive&&onTourContinue){
+      const handled=onTourContinue({intensity,electrode,spread,canContinue});
+      if(handled) return;
+    }
+    onComplete(intensity);
+  };
   return(
     <div className={cn("min-h-screen pb-28",BG)}>
       <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] p-5">
@@ -968,14 +989,14 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
 
           <div className="flex flex-col items-center py-4">
             <span className="text-sm font-semibold text-gray-500 mb-4">Stimulation Intensity (0-10)</span>
-            <IntensityStepper value={intensity} onChange={setIntensity} large/>
+            <IntensityStepper value={intensity} onChange={setIntensityWithTour} large/>
           </div>
           {intensity>=10&&<div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex gap-2"><AlertCircle className="w-4 h-4 mt-0.5 shrink-0"/>Reposition the band higher or lower if no sensation at max intensity.</div>}
           <div className="space-y-2">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Confirm sensations</p>
             {[
-              {state:electrode,set:setElectrode,label:"Tingling at electrode site",sub:"First sensation where the electrode touches the skin",num:1,prev:true},
-              {state:spread,set:setSpread,label:"Tingling migrates to heel and/or toes",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
+              {state:electrode,set:toggleElectrode,label:"Tingling at electrode site",sub:"First sensation where the electrode touches the skin",num:1,prev:true},
+              {state:spread,set:toggleSpread,label:"Tingling migrates to heel and/or toes",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
             ].map(({state,set,label,sub,num,prev})=>(
               <button key={num} disabled={!prev} onClick={()=>prev&&set(!state)} className="flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all" style={{opacity:!prev?0.4:1,cursor:!prev?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
                 <Checkbox checked={state} onChange={prev?set:()=>{}}/>
@@ -992,7 +1013,7 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
           {canContinue&&<div className="flex items-center gap-2 p-3 rounded-xl text-sm" style={{background:"#e8faf4",border:`1px solid ${C.mint}40`,color:C.mintDark}}><CheckCircle2 className="w-4 h-4 shrink-0"/>Calibration confirmed. Ready to start.</div>}
           <div className="flex gap-3 pt-2">
             <button onClick={onBack} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50"><ArrowLeft className="w-4 h-4"/>Back</button>
-            <button onClick={()=>onComplete(intensity)} disabled={!canContinue} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
+            <button onClick={handleContinue} disabled={!canContinue} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
           </div>
         </div></Card>
       </div>
@@ -1002,14 +1023,27 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
 }
 
 // ─── Preset ───────────────────────────────────────────────────────────────────
-function PresetScreen({onStart,onBack,initialIntensity,presets,onNav}){
+function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActive=false,onTourCustomizeOpen,onTourCustomEdit,onTourStartSession}){
   const [selected,setSelected]=useState("default");
   const [showCustom,setShowCustom]=useState(false);
   const [dur,setDur]=useState("30");
   const [freq,setFreq]=useState("10");
   const [intensity,setIntensity]=useState(initialIntensity);
   const pinned=presets.filter(p=>p.isPinned);
-  const handleStart=()=>{if(showCustom)onStart(parseInt(dur)||30,parseInt(freq)||10,intensity);else if(selected==="default")onStart(30,10,intensity);else{const p=presets.find(p=>p.id===selected);if(p)onStart(p.duration,p.frequency,intensity);}};
+  const handleStart=()=>{
+    if(isTourActive&&onTourStartSession){
+      const handled=onTourStartSession({showCustom,dur,freq,intensity,selected});
+      if(handled) return;
+    }
+    if(showCustom)onStart(parseInt(dur)||30,parseInt(freq)||10,intensity);
+    else if(selected==="default")onStart(30,10,intensity);
+    else{
+      const p=presets.find(p=>p.id===selected);
+      if(p)onStart(p.duration,p.frequency,intensity);
+    }
+  };
+  const setDurWithTour=(v)=>{setDur(v);onTourCustomEdit?.("duration",v);};
+  const setFreqWithTour=(v)=>{setFreq(v);onTourCustomEdit?.("frequency",v);};
   return(
     <div className={cn("min-h-screen pb-28",BG)}>
       <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] p-5">
@@ -1025,7 +1059,7 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav}){
             </button>
           </div>
           {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
-          {!showCustom?<button onClick={()=>{setShowCustom(true);setSelected(null);}} className="w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50"><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input type="number" min="1" max="120" value={dur} onChange={e=>setDur(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1"/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input type="number" min="1" max="100" value={freq} onChange={e=>setFreq(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1"/></div></div></Card>}
+          {!showCustom?<button onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className="w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50"><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1"/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1"/></div></div></Card>}
           <div className="flex gap-3 pt-2">
             <button onClick={onBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2"><ArrowLeft className="w-4 h-4"/>Back</button>
             <button onClick={handleStart} disabled={!selected&&!showCustom} className="flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
@@ -1560,16 +1594,18 @@ function LoginScreen({profile,onLogin,onBackToStart}){
   );
 }
 
-function IntroCoachmark({step,total,onNext,onSkip}){
+function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLabel=""}){
   const isLast=step===total-1;
   const steps=[
-    {title:"Guides",body:"Start in Guides to learn about PFD and your device.",pos:"bottom-28 left-3"},
-    {title:"Understanding Guide",body:"Open this guide first to understand treatment basics.",pos:"top-28 right-3"},
-    {title:"Device Setup Guide",body:"Next, review how to place the device correctly.",pos:"bottom-40 right-3"},
-    {title:"Calibration Guide",body:"Then check calibration so sensations are in the right order.",pos:"bottom-20 right-3"},
-    {title:"Stimulation",body:"This is where you'd start stimulation. During walkthrough, starting is disabled.",pos:"bottom-40 left-1/2 -translate-x-1/2"},
+    {title:"Guides",body:"I will walk you through setup. Tap Next to begin.",pos:"bottom-28 left-3"},
+    {title:"Start Stimulation",body:"Tap Start Session on Home to begin the guided setup.",pos:"bottom-40 left-1/2 -translate-x-1/2"},
+    {title:"Adjust Intensity",body:"Use + or − to change intensity at least once.",pos:"bottom-28 right-3"},
+    {title:"Confirm Sensations",body:"Check both sensation boxes to continue.",pos:"bottom-28 right-3"},
+    {title:"Continue",body:"Now tap Continue to move to presets.",pos:"bottom-28 right-3"},
+    {title:"Customize Preset",body:"Tap Customize, then edit duration or frequency.",pos:"bottom-28 right-3"},
+    {title:"Start Button",body:"Tap Start Session to finish this tutorial. No stimulation will start.",pos:"bottom-28 right-3"},
     {title:"Voiding Diary",body:"Use Diary to log symptoms and trends.",pos:"bottom-28 right-20"},
-    {title:"Settings",body:"Use Settings to update profile, reminders, and preferences.",pos:"bottom-28 right-2"},
+    {title:"Settings",body:"Use Settings for profile, reminders, and logout.",pos:"bottom-28 right-2"},
   ];
   const s=steps[step]||steps[0];
   return(
@@ -1586,7 +1622,11 @@ function IntroCoachmark({step,total,onNext,onSkip}){
           </div>
           <div className="flex items-center justify-between mt-3">
             <span className="text-[10px] text-gray-400">Step {step+1} of {total}</span>
-            <button onClick={onNext} className="h-8 px-3 rounded-xl text-white text-xs font-bold" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>{isLast?"Finish":"Next"}</button>
+            {actionRequired?(
+              <span className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{background:`${C.peach}35`,color:C.peachDark}}>{actionLabel||"Complete the highlighted action"}</span>
+            ):(
+              <button onClick={onNext} className="h-8 px-3 rounded-xl text-white text-xs font-bold" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>{isLast?"Finish":"Next"}</button>
+            )}
           </div>
         </div>
         <div className="h-12 w-12 rounded-full border-2 border-white shadow-md flex items-center justify-center" style={{background:`linear-gradient(135deg,${C.cyan}25,${C.mint}25)`}}>
@@ -1644,6 +1684,7 @@ export default function App(){
   const [isAuthenticated,setIsAuthenticated]=useState(false);
   const [introDone,setIntroDone]=useState(false);
   const [tourStep,setTourStep]=useState(null);
+  const [,setTourProgress]=useState({intensityAdjusted:false,electrodeChecked:false,spreadChecked:false,customOpened:false,customEdited:false});
   const [authStep,setAuthStep]=useState("start");
   const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",raceEthnicity:"",use24:false,pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,fecal:false,constipation:false,pelvicPain:false}});
 
@@ -1711,6 +1752,7 @@ export default function App(){
     setIsAuthenticated(true);
     setIntroDone(false);
     setTourStep(0);
+    setTourProgress({intensityAdjusted:false,electrodeChecked:false,spreadChecked:false,customOpened:false,customEdited:false});
     setScreen("guides");
     setGuidesInit("menu");
     setAuthStep("start");
@@ -1734,6 +1776,7 @@ export default function App(){
     setIsAuthenticated(true);
     if(!introDone){
       setTourStep(0);
+      setTourProgress({intensityAdjusted:false,electrodeChecked:false,spreadChecked:false,customOpened:false,customEdited:false});
       setGuidesInit("menu");
       setScreen("guides");
     }else{
@@ -1750,6 +1793,7 @@ export default function App(){
   const handleReplayIntro=()=>{
     setIntroDone(false);
     setTourStep(0);
+    setTourProgress({intensityAdjusted:false,electrodeChecked:false,spreadChecked:false,customOpened:false,customEdited:false});
     setGuidesInit("menu");
     setScreen("guides");
   };
@@ -1763,27 +1807,83 @@ export default function App(){
   };
 
   const handleStartSession=()=>{
-    if(isTourActive) return;
+    if(isTourActive){
+      if(tourStep===1){
+        setTourStep(2);
+        setScreen("precheck");
+      }
+      return;
+    }
     setScreen("precheck");
+  };
+
+  const handleTourIntensityChange=(value)=>{
+    if(!isTourActive||tourStep!==2) return;
+    if(value!==1.0){
+      setTourProgress(p=>({...p,intensityAdjusted:true}));
+      setTourStep(3);
+    }
+  };
+
+  const handleTourCheckboxChange=(key,checked)=>{
+    if(!isTourActive||(tourStep!==3&&tourStep!==4)) return;
+    setTourProgress(p=>{
+      const next={...p};
+      if(key==="electrode") next.electrodeChecked=checked;
+      if(key==="spread") next.spreadChecked=checked;
+      if(next.electrodeChecked&&next.spreadChecked&&tourStep===3) setTourStep(4);
+      return next;
+    });
+  };
+
+  const handleTourPrecheckContinue=({intensity,canContinue})=>{
+    if(!isTourActive||tourStep!==4) return false;
+    if(!canContinue) return true;
+    setIntensity(intensity);
+    setTourStep(5);
+    setScreen("preset");
+    return true;
+  };
+
+  const handleTourCustomizeOpen=()=>{
+    if(!isTourActive||tourStep!==5) return;
+    setTourProgress(p=>({...p,customOpened:true}));
+  };
+
+  const handleTourCustomEdit=(field,val)=>{
+    if(!isTourActive||tourStep!==5) return;
+    if((field==="duration"&&val!=="30")||(field==="frequency"&&val!=="10")){
+      setTourProgress(p=>({...p,customEdited:true}));
+      setTourStep(6);
+    }
+  };
+
+  const handleTourStartFromPreset=()=>{
+    if(!isTourActive||tourStep!==6) return false;
+    setTourStep(7);
+    setScreen("diary");
+    return true;
   };
 
   const nextTourStep=()=>{
     if(tourStep===null) return;
-    if(tourStep>=6){finishTour();return;}
+    if([1,2,3,4,5,6].includes(tourStep)) return;
+    if(tourStep>=8){finishTour();return;}
     setTourStep(tourStep+1);
   };
 
   useEffect(()=>{
     if(!isAuthenticated||tourStep===null) return;
-    if(tourStep<=3){
+    if(tourStep===0){
       setScreen("guides");
-      const sections=["menu","learn","device-setup","calibration"];
-      setGuidesInit(sections[tourStep]||"menu");
+      setGuidesInit("menu");
       return;
     }
-    if(tourStep===4){setScreen("welcome");return;}
-    if(tourStep===5){setScreen("diary");return;}
-    if(tourStep===6){setScreen("settings");}
+    if(tourStep===1){setScreen("welcome");return;}
+    if(tourStep===2||tourStep===3||tourStep===4){setScreen("precheck");return;}
+    if(tourStep===5||tourStep===6){setScreen("preset");return;}
+    if(tourStep===7){setScreen("diary");return;}
+    if(tourStep===8){setScreen("settings");}
   },[isAuthenticated,tourStep]);
 
   const nav=useCallback((key)=>{
@@ -1837,9 +1937,23 @@ export default function App(){
         onNav={nav}
         onViewDeviceSetup={()=>setScreen("guides-session-setup")}
         onViewCalibrationGuide={()=>setScreen("guides-session-cal")}
+        isTourActive={isTourActive}
+        onTourIntensityChange={handleTourIntensityChange}
+        onTourCheckboxChange={handleTourCheckboxChange}
+        onTourContinue={handleTourPrecheckContinue}
       />}
 
-      {screen==="preset"&&<PresetScreen onStart={(d,f,i)=>{setDuration(d);setFrequency(f);setIntensity(i);setScreen("session");}} onBack={()=>setScreen("precheck")} initialIntensity={intensity} presets={presets} onNav={nav}/>}
+      {screen==="preset"&&<PresetScreen
+        onStart={(d,f,i)=>{setDuration(d);setFrequency(f);setIntensity(i);setScreen("session");}}
+        onBack={()=>setScreen("precheck")}
+        initialIntensity={intensity}
+        presets={presets}
+        onNav={nav}
+        isTourActive={isTourActive}
+        onTourCustomizeOpen={handleTourCustomizeOpen}
+        onTourCustomEdit={handleTourCustomEdit}
+        onTourStartSession={handleTourStartFromPreset}
+      />}
       {screen==="session"&&<SessionScreen onComplete={(s,e,complete)=>{setLastStart(s);setLastEnd(e);setSessions(p=>[...p,{timestamp:new Date(),complete}]);setPausedSession(null);setScreen("complete");}} onPause={ps=>{setPausedSession(ps);setScreen("welcome");}} duration={duration} frequency={frequency} initialIntensity={intensity} onNav={nav}/>}
       {screen==="session-resume"&&pausedSession&&<SessionScreen onComplete={(s,e,complete)=>{setLastStart(s);setLastEnd(e);setSessions(p=>[...p,{timestamp:new Date(),complete}]);setPausedSession(null);setScreen("complete");}} onPause={ps=>{setPausedSession(ps);setScreen("welcome");}} duration={pausedSession.duration} frequency={pausedSession.frequency} initialIntensity={pausedSession.intensity} initialRemaining={pausedSession.remaining} onNav={nav}/>}
       {screen==="complete"&&<CompleteScreen onHome={()=>setScreen("welcome")} startTime={lastStart} endTime={lastEnd} onNav={nav} use24={use24}/>}
@@ -1864,7 +1978,22 @@ export default function App(){
       />}
 
       {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout}/>}
-      {tourStep!==null&&<IntroCoachmark step={tourStep} total={7} onNext={nextTourStep} onSkip={finishTour}/>}
+      {tourStep!==null&&<IntroCoachmark
+        step={tourStep}
+        total={9}
+        onNext={nextTourStep}
+        onSkip={finishTour}
+        actionRequired={[1,2,3,4,5,6].includes(tourStep)}
+        actionLabel={
+          tourStep===1?"Tap Start Session":
+          tourStep===2?"Adjust intensity":
+          tourStep===3?"Check both boxes":
+          tourStep===4?"Tap Continue":
+          tourStep===5?"Customize and edit values":
+          tourStep===6?"Tap Start Session (simulated)":
+          ""
+        }
+      />}
     </div>
   );
 }
