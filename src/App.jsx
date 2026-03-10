@@ -805,9 +805,9 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
 
       <div className="px-6 pb-5">
         {forceTourStart?(
-          <Card className="p-6 text-center" style={{background:`linear-gradient(135deg, #e8f9fb, #e8ecff)`,borderColor:`${C.cyan}40`,borderWidth:2}}>
+          <Card className={cn("p-6 text-center",isTourActive&&tourStep===1&&TOUR_TARGET)} style={{background:`linear-gradient(135deg, #e8f9fb, #e8ecff)`,borderColor:`${C.cyan}40`,borderWidth:2}}>
             <h2 className="text-2xl font-black mb-5" style={{color:C.navy}}>Tap Start Session</h2>
-            <button onClick={onStartSession} className={cn("h-12 px-8 rounded-2xl text-white font-bold text-base inline-flex items-center gap-2",isTourActive&&tourStep===1&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 6px 20px ${C.navy}50`}}>
+            <button onClick={onStartSession} className="h-12 px-8 rounded-2xl text-white font-bold text-base inline-flex items-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 6px 20px ${C.navy}50`}}>
               <Activity className="w-5 h-5"/>Start Session
             </button>
           </Card>
@@ -1011,17 +1011,19 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
           </div>
 
           <div className={cn("flex flex-col items-center py-4",isTourActive&&tourStep===2&&cn(TOUR_TARGET,"rounded-2xl"))}>
+            {isTourActive&&tourStep===2&&<p className="text-xs font-bold text-cyan-800 mb-2">Step 1: Use + or − to change intensity</p>}
             <span className="text-sm font-semibold text-gray-500 mb-4">Stimulation Intensity (0-10)</span>
             <IntensityStepper value={intensity} onChange={setIntensityWithTour} large disabled={!allowIntensity}/>
           </div>
           {intensity>=10&&<div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex gap-2"><AlertCircle className="w-4 h-4 mt-0.5 shrink-0"/>Reposition the band higher or lower if no sensation at max intensity.</div>}
-          <div className="space-y-2">
+          <div className={cn("space-y-2",isTourActive&&tourStep===3&&cn(TOUR_TARGET,"rounded-2xl p-2"))}>
+            {isTourActive&&tourStep===3&&<p className="text-xs font-bold text-cyan-800 mb-1">Step 2: Check both sensation boxes</p>}
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Confirm sensations</p>
             {[
               {state:electrode,set:toggleElectrode,label:"Tingling at electrode site",sub:"First sensation where the electrode touches the skin",num:1,prev:true},
               {state:spread,set:toggleSpread,label:"Tingling migrates to heel and/or toes",sub:"Heel-only is okay. You may also feel tingling along the arch into the toes; at higher intensity, toes may curl",num:2,prev:electrode},
             ].map(({state,set,label,sub,num,prev})=>(
-              <button key={num} disabled={!prev||!allowChecks} onClick={()=>prev&&allowChecks&&set(!state)} className={cn("flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all",isTourActive&&tourStep===3&&TOUR_TARGET)} style={{opacity:!prev||!allowChecks?0.4:1,cursor:!prev||!allowChecks?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
+              <button key={num} disabled={!prev||!allowChecks} onClick={()=>prev&&allowChecks&&set(!state)} className="flex items-center gap-3 w-full p-4 rounded-xl border-2 text-left transition-all" style={{opacity:!prev||!allowChecks?0.4:1,cursor:!prev||!allowChecks?"not-allowed":"pointer",borderColor:state?C.mint:"#e5e7eb",background:state?"#e8faf4":"white"}}>
                 <Checkbox checked={state} onChange={prev?set:()=>{}}/>
                 <div>
                   <div className="font-semibold text-sm flex items-center gap-2">
@@ -1034,9 +1036,12 @@ function PreCheckScreen({onComplete,onBack,onViewDeviceSetup,onViewCalibrationGu
             ))}
           </div>
           {canContinue&&<div className="flex items-center gap-2 p-3 rounded-xl text-sm" style={{background:"#e8faf4",border:`1px solid ${C.mint}40`,color:C.mintDark}}><CheckCircle2 className="w-4 h-4 shrink-0"/>Calibration confirmed. Ready to start.</div>}
-          <div className="flex gap-3 pt-2">
-            <button disabled={!allowBack} onClick={onBack} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
-            <button onClick={handleContinue} disabled={!canContinue||!allowContinue} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===4&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
+          <div className={cn("pt-2",isTourActive&&tourStep===4&&cn(TOUR_TARGET,"rounded-2xl p-2"))}>
+            {isTourActive&&tourStep===4&&<p className="text-xs font-bold text-cyan-800 mb-2">Step 3: Tap Continue</p>}
+            <div className="flex gap-3">
+              <button disabled={!allowBack} onClick={onBack} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
+              <button onClick={handleContinue} disabled={!canContinue||!allowContinue} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}>Continue<ArrowRight className="w-4 h-4"/></button>
+            </div>
           </div>
         </div></Card>
       </div>
@@ -1086,10 +1091,16 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
             </button>
           </div>
           {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button disabled={isTourActive} key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
-          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&TOUR_TARGET)}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div></div></Card>}
-          <div className="flex gap-3 pt-2">
+          <div className={cn(isTourActive&&tourStep===5&&cn(TOUR_TARGET,"rounded-2xl p-2"))}>
+            {isTourActive&&tourStep===5&&<p className="text-xs font-bold text-cyan-800 mb-2">Step 4: Tap Customize, then edit a value</p>}
+            {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className="w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40"><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div></div></Card>}
+          </div>
+          <div className={cn("pt-2",isTourActive&&tourStep===6&&cn(TOUR_TARGET,"rounded-2xl p-2"))}>
+            {isTourActive&&tourStep===6&&<p className="text-xs font-bold text-cyan-800 mb-2">Step 5: Tap Start Session</p>}
+            <div className="flex gap-3">
             <button disabled={!allowBack} onClick={onBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
-            <button onClick={handleStart} disabled={!selected&&!showCustom||!allowStart} className={cn("flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===6&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
+            <button onClick={handleStart} disabled={!selected&&!showCustom||!allowStart} className="flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
+            </div>
           </div>
         </div></Card>
       </div>
@@ -1216,6 +1227,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
   if(section==="device-setup"){
     const s=steps[step];
     const isLast=step===steps.length-1;
+    const showForwardHint=lockToSequence||fromSession;
     return(
       <div className={cn("min-h-screen pb-28",BG)}>
         <div className="max-w-2xl mx-auto p-6 space-y-5">
@@ -1255,23 +1267,24 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
               </div>
             )}
 
+            {showForwardHint&&<p className="text-xs font-bold text-cyan-800 text-center mb-2">Use the highlighted button below to move forward.</p>}
             <div className="flex gap-3 mt-6">
               {step>0&&<button onClick={()=>setStep(step-1)} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2"><ArrowLeft className="w-4 h-4"/>Previous</button>}
-              {!isLast&&<button onClick={()=>setStep(step+1)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Next<ChevronRight className="w-4 h-4"/></button>}
-              {isLast&&!fromSession&&!lockToSequence&&<button onClick={goToMenu} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}><CheckCircle2 className="w-4 h-4"/>Done — Back to Guides</button>}
+              {!isLast&&<button onClick={()=>setStep(step+1)} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Next<ChevronRight className="w-4 h-4"/></button>}
+              {isLast&&!fromSession&&!lockToSequence&&<button onClick={goToMenu} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}><CheckCircle2 className="w-4 h-4"/>Done — Back to Guides</button>}
               {isLast&&!fromSession&&lockToSequence&&(
-                <button onClick={()=>setSection("calibration")} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+                <button onClick={()=>setSection("calibration")} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
                   <ArrowRight className="w-4 h-4"/>Next Guide: Calibration
                 </button>
               )}
               {isLast&&fromSession&&(
-                <button onClick={()=>setSection("calibration")} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+                <button onClick={()=>setSection("calibration")} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
                   <ArrowRight className="w-4 h-4"/>Next: Calibration Guide
                 </button>
               )}
             </div>
             {isLast&&fromSession&&(
-              <button onClick={handleExit} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 mt-2" style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
+              <button onClick={handleExit} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 mt-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
                 <CheckCircle2 className="w-4 h-4"/>Done — Back to Setup
               </button>
             )}
