@@ -90,7 +90,7 @@ const fmtAlarmTime=(timeStr,use24)=>{
 };
 
 const BG="bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100";
-const TOUR_TARGET="ring-4 ring-yellow-300 animate-pulse outline outline-4 outline-yellow-400 outline-offset-2 shadow-2xl shadow-yellow-300/70";
+const TOUR_TARGET="relative z-[115] ring-2 ring-white outline outline-2 outline-cyan-300 shadow-[0_0_0_4px_rgba(29,78,137,0.35)] animate-pulse";
 
 // ─── PelviStim Logo SVG ───────────────────────────────────────────────────────
 function PelviStimLogo({size=36}){
@@ -1086,7 +1086,7 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
             </button>
           </div>
           {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button disabled={isTourActive} key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
-          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&TOUR_TARGET)}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-yellow-400")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-yellow-400")}/></div></div></Card>}
+          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&TOUR_TARGET)}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div></div></Card>}
           <div className="flex gap-3 pt-2">
             <button disabled={!allowBack} onClick={onBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
             <button onClick={handleStart} disabled={!selected&&!showCustom||!allowStart} className={cn("flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===6&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
@@ -1704,6 +1704,11 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
   );
 }
 
+function TourFocusOverlay({active=false}){
+  if(!active) return null;
+  return <div className="fixed inset-0 z-[110] pointer-events-none bg-black/40"/>;
+}
+
 // ─── Reminder Popup ───────────────────────────────────────────────────────────
 function ReminderPopup({alarm,onDismiss,onStartSession,use24}){
   const isAutostart=alarm.alarmType==="autostart";
@@ -1766,7 +1771,7 @@ export default function App(){
       if(Array.isArray(parsed?.presets)) setPresets(parsed.presets);
       if(Array.isArray(parsed?.alarms)) setAlarms(parsed.alarms);
       setOnboardingComplete(!!parsed?.onboardingComplete);
-      setIntroDone(!!parsed?.introDone);
+      setIntroDone(parsed?.introDone ?? !!parsed?.onboardingComplete);
       if(parsed?.onboardingComplete&&parsed?.profile) setAuthStep("start");
     }catch{}
   },[]);
@@ -2077,6 +2082,7 @@ export default function App(){
           ""
         }
       />}
+      <TourFocusOverlay active={tourStep!==null&&[1,2,3,4,5,6,7,8].includes(tourStep)}/>
     </div>
   );
 }
