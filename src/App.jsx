@@ -1722,7 +1722,7 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
 
 function TourFocusOverlay({active=false}){
   if(!active) return null;
-  return <div className="fixed inset-0 z-[110] pointer-events-none bg-black/18"/>;
+  return null;
 }
 
 // ─── Reminder Popup ───────────────────────────────────────────────────────────
