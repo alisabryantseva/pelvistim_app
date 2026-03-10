@@ -803,27 +803,6 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
           </Card>
         )}
 
-        {completedDays.length>0&&(
-          <div>
-            <h3 className="text-sm font-bold text-gray-600 mb-2">This month's logs</h3>
-            <div className="space-y-2">
-              {completedDays.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>(
-                <Card key={e.id} className="p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-sm">{fmt(e.date,{weekday:"long",month:"short",day:"numeric"})}</span>
-                    <button onClick={()=>openDay(new Date(e.date))} className="text-[10px] font-semibold hover:underline" style={{color:C.cyan}}>Edit</button>
-                  </div>
-                  <div className="flex gap-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1.5"><UrgencyIcon className="w-3.5 h-3.5" style={{color:C.cyan}}/>{e.urgencyEpisodes} urgency</span>
-                    <span className="flex items-center gap-1.5"><CupIcon className="w-3.5 h-3.5" style={{color:C.navy}}/>{e.leakageEpisodes||0} leakage</span>
-                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" style={{color:C.mintDark}}/>{e.daytimeVoids||0} daytime</span>
-                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-gray-500"/>{e.nighttimeVoids||0} nighttime</span>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
       <BottomNav current="diary" onNav={onNav}/>
     </div>
