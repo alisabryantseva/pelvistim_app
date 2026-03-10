@@ -633,9 +633,9 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
               <>
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.cyan}15`}}>
-                      <UrgencyIcon className="w-5 h-5" style={{color:C.cyan}}/>
-                    </div>
+                  <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f1f5f9"}}>
+                    <UrgencyIcon className="w-5 h-5" style={{color:C.navy}}/>
+                  </div>
                     <div>
                       <div className="font-semibold text-sm">Urgency Episodes</div>
                       <div className="text-[10px] text-gray-400">Strong urge, no leak</div>
@@ -643,14 +643,14 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                   </div>
                   <div className={cn("flex items-center gap-2",isTourActive&&tourStep===8&&cn(TOUR_NUMERIC_PANEL,"px-3 py-2"))}>
                     <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.cyan}}>{form.urgencyEpisodes}</span>
-                    <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg text-white disabled:opacity-40" style={{background:`${C.cyan}20`,color:C.cyanDark}}>+</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.urgencyEpisodes}</span>
+                    <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#e8f9fb",color:C.navy}}>+</button>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.navy}12`}}>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f1f5f9"}}>
                       <CupIcon className="w-5 h-5" style={{color:C.navy}}/>
                     </div>
                     <div>
@@ -661,14 +661,14 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                   <div className="flex items-center gap-2">
                     <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
                     <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.leakageEpisodes}</span>
-                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.navy}15`,color:C.navy}}>+</button>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#e8f9fb",color:C.navy}}>+</button>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between py-3 border-t border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.mint}15`}}>
-                      <Clock className="w-5 h-5" style={{color:C.mintDark}}/>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f1f5f9"}}>
+                      <Clock className="w-5 h-5" style={{color:C.navy}}/>
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Daytime Voids</div>
@@ -677,15 +677,15 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                   </div>
                   <div className="flex items-center gap-2">
                     <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.mintDark}}>{form.daytimeVoids}</span>
-                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.mint}20`,color:C.mintDark}}>+</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.daytimeVoids}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#e8f9fb",color:C.navy}}>+</button>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between py-3 border-t border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f3f4f6"}}>
-                      <Clock className="w-5 h-5 text-gray-600"/>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f1f5f9"}}>
+                      <Clock className="w-5 h-5" style={{color:C.navy}}/>
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Nighttime Voids</div>
@@ -694,8 +694,8 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                   </div>
                   <div className="flex items-center gap-2">
                     <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                    <span className="text-2xl font-black w-8 text-center tabular-nums text-gray-700">{form.nighttimeVoids}</span>
-                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg bg-gray-200 text-gray-700 disabled:opacity-40">+</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.nighttimeVoids}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#e8f9fb",color:C.navy}}>+</button>
                   </div>
                 </div>
               </>
@@ -705,8 +705,8 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
               <>
                 <div className="flex items-center justify-between py-3 border-t border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.peach}20`}}>
-                      <FecalIcon className="w-5 h-5" style={{color:C.peachDark}}/>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f1f5f9"}}>
+                      <FecalIcon className="w-5 h-5" style={{color:C.navy}}/>
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Fecal Incontinence Episodes</div>
@@ -715,15 +715,15 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                   </div>
                   <div className="flex items-center gap-2">
                     <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("fecalIncontinenceEpisodes",form.fecalIncontinenceEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.peachDark}}>{form.fecalIncontinenceEpisodes}</span>
-                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("fecalIncontinenceEpisodes",form.fecalIncontinenceEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.peach}30`,color:C.peachDark}}>+</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.fecalIncontinenceEpisodes}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("fecalIncontinenceEpisodes",form.fecalIncontinenceEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#e8f9fb",color:C.navy}}>+</button>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between py-3 border-t border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.peach}12`}}>
-                      <ConstipationIcon className="w-5 h-5" style={{color:"#e08040"}}/>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f1f5f9"}}>
+                      <ConstipationIcon className="w-5 h-5" style={{color:C.navy}}/>
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Bowel Movements</div>
@@ -732,8 +732,8 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                   </div>
                   <div className="flex items-center gap-2">
                     <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("bowelMovements",form.bowelMovements-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:"#e08040"}}>{form.bowelMovements}</span>
-                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("bowelMovements",form.bowelMovements+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#fde68a",color:"#b45309"}}>+</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.bowelMovements}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("bowelMovements",form.bowelMovements+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#e8f9fb",color:C.navy}}>+</button>
                   </div>
                 </div>
               </>
