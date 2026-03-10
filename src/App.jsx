@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import ankleDeviceImg from "./assets/ankle-device-guide.jpg";
+import ankleDeviceImg from "./assets/ankle-device-guide.png";
 import pelvicFloorDiagramImg from "./assets/pelvic-floor-diagram.jpg";
 
 // ─── Brand Palette ────────────────────────────────────────────────────────────
