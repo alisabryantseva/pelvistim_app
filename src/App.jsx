@@ -750,25 +750,25 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                 <div className="text-[10px] text-gray-500 mt-0.5">Urgency episodes/mo</div>
               </div>
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <div className="text-2xl font-black" style={{color:C.navy}}>{extrapolated.perMonth.leakageEpisodes.toFixed(1)}</div>
+                <div className="text-2xl font-black" style={{color:C.cyan}}>{extrapolated.perMonth.leakageEpisodes.toFixed(1)}</div>
                 <div className="text-[10px] text-gray-500 mt-0.5">Leakage episodes/mo</div>
               </div>
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <div className="text-2xl font-black" style={{color:C.mintDark}}>{extrapolated.perMonth.daytimeVoids.toFixed(1)}</div>
+                <div className="text-2xl font-black" style={{color:C.cyan}}>{extrapolated.perMonth.daytimeVoids.toFixed(1)}</div>
                 <div className="text-[10px] text-gray-500 mt-0.5">Daytime voids/mo</div>
               </div>
               <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                <div className="text-2xl font-black text-gray-700">{extrapolated.perMonth.nighttimeVoids.toFixed(1)}</div>
+                <div className="text-2xl font-black" style={{color:C.cyan}}>{extrapolated.perMonth.nighttimeVoids.toFixed(1)}</div>
                 <div className="text-[10px] text-gray-500 mt-0.5">Nighttime voids/mo</div>
               </div>
               {showFecal&&(
                 <>
                   <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                    <div className="text-2xl font-black" style={{color:C.peachDark}}>{extrapolated.perMonth.fecalIncontinenceEpisodes.toFixed(1)}</div>
+                    <div className="text-2xl font-black" style={{color:C.cyan}}>{extrapolated.perMonth.fecalIncontinenceEpisodes.toFixed(1)}</div>
                     <div className="text-[10px] text-gray-500 mt-0.5">Fecal incontinence/mo</div>
                   </div>
                   <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-                    <div className="text-2xl font-black" style={{color:"#b45309"}}>{extrapolated.perMonth.bowelMovements.toFixed(1)}</div>
+                    <div className="text-2xl font-black" style={{color:C.cyan}}>{extrapolated.perMonth.bowelMovements.toFixed(1)}</div>
                     <div className="text-[10px] text-gray-500 mt-0.5">Bowel movements/mo</div>
                   </div>
                 </>
