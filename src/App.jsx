@@ -269,12 +269,12 @@ function BottomNav({current,onNav}){
 // ─── Constants ────────────────────────────────────────────────────────────────
 const INCONTINENCE_SUBTYPES={
   urge:{label:"Urge Incontinence",Icon:UrgencyIcon,desc:"Leakage associated with a sudden, hard-to-delay urge to urinate",accent:C.cyan},
-  urgency:{label:"Urinary Urgency",Icon:AlertCircle,desc:"Sudden, strong urge to urinate that is difficult to defer",accent:C.cyanDark},
-  frequency:{label:"Urinary Frequency",Icon:Clock,desc:"Needing to urinate more often than usual during the day",accent:C.navy},
-  hesitancy:{label:"Urinary Hesitancy / Difficulty Emptying",Icon:Timer,desc:"Trouble starting urine flow or feeling incompletely emptied",accent:C.mint},
-  fecal:{label:"Fecal Incontinence",Icon:FecalIcon,desc:"Difficulty controlling bowel movements",accent:C.peachDark},
-  constipation:{label:"Constipation",Icon:ConstipationIcon,desc:"Infrequent or difficult bowel movements, often from slow colonic motility or idiopathic causes",accent:"#e08040"},
-  pelvicPain:{label:"Pelvic Pain",Icon:Heart,desc:"Persistent pain or discomfort in the pelvic region",accent:"#ec4899"},
+  urgency:{label:"Urinary Urgency",Icon:AlertCircle,desc:"Sudden, strong urge to urinate that is difficult to defer",accent:C.cyan},
+  frequency:{label:"Urinary Frequency",Icon:Clock,desc:"Needing to urinate more often than usual during the day",accent:C.cyan},
+  hesitancy:{label:"Urinary Hesitancy / Difficulty Emptying",Icon:Timer,desc:"Trouble starting urine flow or feeling incompletely emptied",accent:C.cyan},
+  fecal:{label:"Fecal Incontinence",Icon:FecalIcon,desc:"Difficulty controlling bowel movements",accent:C.cyan},
+  constipation:{label:"Constipation",Icon:ConstipationIcon,desc:"Infrequent or difficult bowel movements, often from slow colonic motility or idiopathic causes",accent:C.cyan},
+  pelvicPain:{label:"Pelvic Pain",Icon:Heart,desc:"Persistent pain or discomfort in the pelvic region",accent:C.cyan},
 };
 
 const GENDER_OPTIONS=["Female","Male","Non-binary","Other / Prefer not to say"];
