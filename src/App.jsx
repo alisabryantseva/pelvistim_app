@@ -281,21 +281,6 @@ const GENDER_OPTIONS=["Female","Male","Non-binary","Other / Prefer not to say"];
 const EDUCATION_LEVELS=["Prefer not to say","Less than high school","High school / GED","Some college","Associate's degree","Bachelor's degree","Graduate degree"];
 const RACE_ETHNICITY_OPTIONS=["Prefer not to say","American Indian or Alaska Native","Asian","Black or African American","Hispanic or Latino","Middle Eastern or North African","Native Hawaiian or Other Pacific Islander","White","Multiracial"];
 
-const PSEUDODIAGNOSIS={
-  urge:{title:"Overactive Bladder (OAB)",bg:"#e8f9fb",border:`2px solid ${C.cyan}40`,text:C.cyanDark,body:"Your symptoms are consistent with overactive bladder, where bladder muscles contract unexpectedly. Neuromodulation is highly effective for this pattern — most patients see 50–70% reduction in urge episodes after 8 weeks."},
-  urgency:{title:"Urinary Urgency Pattern",bg:"#e8f9fb",border:`2px solid ${C.cyan}40`,text:C.cyanDark,body:"Your pattern suggests urgency-predominant bladder symptoms. Tibial neuromodulation is commonly used to reduce urgency intensity and improve bladder control over time."},
-  frequency:{title:"Urinary Frequency Pattern",bg:"#eef2ff",border:"2px solid #6366f140",text:"#3730a3",body:"Your symptoms suggest urinary frequency. Neuromodulation may help normalize bladder signaling so trips to the bathroom become less frequent."},
-  hesitancy:{title:"Voiding Dysfunction Pattern",bg:"#e8faf4",border:`2px solid ${C.mint}40`,text:C.mintDark,body:"Your symptoms suggest hesitancy or incomplete emptying. Please discuss these symptoms with your clinician to confirm fit for this therapy and rule out obstruction."},
-  fecal:{title:"Fecal Incontinence / Bowel Dysfunction",bg:"#fff7ed",border:"2px solid #f5a85a40",text:"#c2610a",body:"Your symptoms are consistent with fecal incontinence. Tibial nerve stimulation has shown promising results for bowel dysfunction, with treatment protocols that may overlap with urinary symptoms."},
-  constipation:{title:"Constipation Pattern",bg:"#fffbeb",border:"2px solid #e0804040",text:"#b45309",body:"Your symptoms suggest constipation, which may be associated with slow colonic motility or idiopathic bowel dysfunction. Neuromodulation may support bowel regularity in select cases."},
-  pelvicPain:{title:"Pelvic Pain Pattern",bg:"#fdf2f8",border:"2px solid #ec489940",text:"#be185d",body:"Your symptoms include pelvic pain. Please review this with your clinician, as pelvic pain can have multiple causes and may require additional evaluation."},
-};
-
-function getPrimaryDiagnosis(pfdTypes){
-  const p=["urge","urgency","frequency","hesitancy","fecal","constipation","pelvicPain"];
-  for(const k of p){if(pfdTypes?.[k])return k;}
-  return null;
-}
 
 // ─── Schedule Screen ──────────────────────────────────────────────────────────
 const LEAD_OPTIONS=[5,10,15,30];
@@ -509,7 +494,7 @@ function AlarmCard({a,onEdit,onToggle,onDelete,formatSchedule,use24}){
 }
 
 // ─── Voiding Diary ────────────────────────────────────────────────────────────
-function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,tourStep=null,onTourDayOpen,onTourSymptomLog}){
+function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive=false,tourStep=null,onTourDayOpen,onTourSymptomLog}){
   const today=new Date();
   const ws=startOfWeek(today);
   const ms=startOfMonth(today);
@@ -525,14 +510,18 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
   });
   const calendarDays=eachDay(startOfWeek(ms),endOfWeek(me));
   const [activeDay,setActiveDay]=useState(null);
-  const [form,setForm]=useState({urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
+  const [form,setForm]=useState({urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0,fecalIncontinenceEpisodes:0,bowelMovements:0});
   const allowDayPick=!isTourActive||tourStep===7;
   const allowSymptomEdit=!isTourActive||tourStep===8;
   const onlyUrgencyControl=isTourActive&&tourStep===8;
+  const urinarySelected=Object.entries((settings?.pfdTypes)||{}).some(([k,v])=>v&&["urge","urgency","frequency","hesitancy"].includes(k));
+  const fecalSelected=Object.entries((settings?.pfdTypes)||{}).some(([k,v])=>v&&["fecal","constipation"].includes(k));
+  const showUrinary=isTourActive||urinarySelected||(!urinarySelected&&!fecalSelected);
+  const showFecal=fecalSelected||(!urinarySelected&&!fecalSelected);
 
   const openDay=(day)=>{
     const existing=monthEntries.find(e=>sameDay(e.date,day));
-    setForm(existing?{urgencyEpisodes:existing.urgencyEpisodes,leakageEpisodes:existing.leakageEpisodes||0,daytimeVoids:existing.daytimeVoids||0,nighttimeVoids:existing.nighttimeVoids||0}:{urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0});
+    setForm(existing?{urgencyEpisodes:existing.urgencyEpisodes,leakageEpisodes:existing.leakageEpisodes||0,daytimeVoids:existing.daytimeVoids||0,nighttimeVoids:existing.nighttimeVoids||0,fecalIncontinenceEpisodes:existing.fecalIncontinenceEpisodes||0,bowelMovements:existing.bowelMovements||0}:{urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0,fecalIncontinenceEpisodes:0,bowelMovements:0});
     setActiveDay(day);
     onTourDayOpen?.(day);
   };
@@ -560,9 +549,11 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
       leakageEpisodes:completedDays.reduce((s,e)=>s+(e.leakageEpisodes||0),0)/completedDays.length,
       daytimeVoids:completedDays.reduce((s,e)=>s+(e.daytimeVoids||0),0)/completedDays.length,
       nighttimeVoids:completedDays.reduce((s,e)=>s+(e.nighttimeVoids||0),0)/completedDays.length,
+      fecalIncontinenceEpisodes:completedDays.reduce((s,e)=>s+(e.fecalIncontinenceEpisodes||0),0)/completedDays.length,
+      bowelMovements:completedDays.reduce((s,e)=>s+(e.bowelMovements||0),0)/completedDays.length,
     };
     return{
-      perMonth:{urgencyEpisodes:avg.urgencyEpisodes*daysInMonth,leakageEpisodes:avg.leakageEpisodes*daysInMonth,daytimeVoids:avg.daytimeVoids*daysInMonth,nighttimeVoids:avg.nighttimeVoids*daysInMonth},
+      perMonth:{urgencyEpisodes:avg.urgencyEpisodes*daysInMonth,leakageEpisodes:avg.leakageEpisodes*daysInMonth,daytimeVoids:avg.daytimeVoids*daysInMonth,nighttimeVoids:avg.nighttimeVoids*daysInMonth,fecalIncontinenceEpisodes:avg.fecalIncontinenceEpisodes*daysInMonth,bowelMovements:avg.bowelMovements*daysInMonth},
     };
   },[completedDays,daysInMonth]);
 
@@ -638,73 +629,115 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
               </button>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.cyan}15`}}>
-                  <UrgencyIcon className="w-5 h-5" style={{color:C.cyan}}/>
+            {showUrinary&&(
+              <>
+                <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.cyan}15`}}>
+                      <UrgencyIcon className="w-5 h-5" style={{color:C.cyan}}/>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Urgency Episodes</div>
+                      <div className="text-[10px] text-gray-400">Strong urge, no leak</div>
+                    </div>
+                  </div>
+                  <div className={cn("flex items-center gap-2",isTourActive&&tourStep===8&&cn(TOUR_NUMERIC_PANEL,"px-3 py-2"))}>
+                    <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.cyan}}>{form.urgencyEpisodes}</span>
+                    <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg text-white disabled:opacity-40" style={{background:`${C.cyan}20`,color:C.cyanDark}}>+</button>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-sm">Urgency Episodes</div>
-                  <div className="text-[10px] text-gray-400">Strong urge, no leak</div>
-                </div>
-              </div>
-              <div className={cn("flex items-center gap-2",isTourActive&&tourStep===8&&cn(TOUR_NUMERIC_PANEL,"px-3 py-2"))}>
-                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.cyan}}>{form.urgencyEpisodes}</span>
-                <button disabled={!allowSymptomEdit} onClick={()=>updateAndSave("urgencyEpisodes",form.urgencyEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg text-white disabled:opacity-40" style={{background:`${C.cyan}20`,color:C.cyanDark}}>+</button>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.navy}12`}}>
-                  <CupIcon className="w-5 h-5" style={{color:C.navy}}/>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.navy}12`}}>
+                      <CupIcon className="w-5 h-5" style={{color:C.navy}}/>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Leakage Episodes</div>
+                      <div className="text-[10px] text-gray-400">Any unintended leakage</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.leakageEpisodes}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.navy}15`,color:C.navy}}>+</button>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-sm">Leakage Episodes</div>
-                  <div className="text-[10px] text-gray-400">Any unintended leakage</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.navy}}>{form.leakageEpisodes}</span>
-                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("leakageEpisodes",form.leakageEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.navy}15`,color:C.navy}}>+</button>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between py-3 border-t border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.mint}15`}}>
-                  <Clock className="w-5 h-5" style={{color:C.mintDark}}/>
+                <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.mint}15`}}>
+                      <Clock className="w-5 h-5" style={{color:C.mintDark}}/>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Daytime Voids</div>
+                      <div className="text-[10px] text-gray-400"># of times urinating during daytime</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.mintDark}}>{form.daytimeVoids}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.mint}20`,color:C.mintDark}}>+</button>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-sm">Daytime Voids</div>
-                  <div className="text-[10px] text-gray-400"># of times urinating during daytime</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.mintDark}}>{form.daytimeVoids}</span>
-                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("daytimeVoids",form.daytimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.mint}20`,color:C.mintDark}}>+</button>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between py-3 border-t border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f3f4f6"}}>
-                  <Clock className="w-5 h-5 text-gray-600"/>
+                <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:"#f3f4f6"}}>
+                      <Clock className="w-5 h-5 text-gray-600"/>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Nighttime Voids</div>
+                      <div className="text-[10px] text-gray-400"># of times urinating from bedtime to wake time</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums text-gray-700">{form.nighttimeVoids}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg bg-gray-200 text-gray-700 disabled:opacity-40">+</button>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-sm">Nighttime Voids</div>
-                  <div className="text-[10px] text-gray-400"># of times urinating from bedtime to wake time</div>
+              </>
+            )}
+
+            {showFecal&&(
+              <>
+                <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.peach}20`}}>
+                      <FecalIcon className="w-5 h-5" style={{color:C.peachDark}}/>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Fecal Incontinence Episodes</div>
+                      <div className="text-[10px] text-gray-400">Any unintended bowel leakage</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("fecalIncontinenceEpisodes",form.fecalIncontinenceEpisodes-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:C.peachDark}}>{form.fecalIncontinenceEpisodes}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("fecalIncontinenceEpisodes",form.fecalIncontinenceEpisodes+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:`${C.peach}30`,color:C.peachDark}}>+</button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
-                <span className="text-2xl font-black w-8 text-center tabular-nums text-gray-700">{form.nighttimeVoids}</span>
-                <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("nighttimeVoids",form.nighttimeVoids+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg bg-gray-200 text-gray-700 disabled:opacity-40">+</button>
-              </div>
-            </div>
+
+                <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{background:`${C.peach}12`}}>
+                      <ConstipationIcon className="w-5 h-5" style={{color:"#e08040"}}/>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Bowel Movements</div>
+                      <div className="text-[10px] text-gray-400"># of bowel movements today</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("bowelMovements",form.bowelMovements-1)} className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-90 font-bold text-lg disabled:opacity-40">−</button>
+                    <span className="text-2xl font-black w-8 text-center tabular-nums" style={{color:"#e08040"}}>{form.bowelMovements}</span>
+                    <button disabled={!allowSymptomEdit||onlyUrgencyControl} onClick={()=>updateAndSave("bowelMovements",form.bowelMovements+1)} className="h-9 w-9 rounded-xl flex items-center justify-center active:scale-90 font-bold text-lg disabled:opacity-40" style={{background:"#fde68a",color:"#b45309"}}>+</button>
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         )}
 
@@ -728,6 +761,18 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
                 <div className="text-2xl font-black text-gray-700">{extrapolated.perMonth.nighttimeVoids.toFixed(1)}</div>
                 <div className="text-[10px] text-gray-500 mt-0.5">Nighttime voids/mo</div>
               </div>
+              {showFecal&&(
+                <>
+                  <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+                    <div className="text-2xl font-black" style={{color:C.peachDark}}>{extrapolated.perMonth.fecalIncontinenceEpisodes.toFixed(1)}</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Fecal incontinence/mo</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+                    <div className="text-2xl font-black" style={{color:"#b45309"}}>{extrapolated.perMonth.bowelMovements.toFixed(1)}</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Bowel movements/mo</div>
+                  </div>
+                </>
+              )}
             </div>
           </Card>
         )}
@@ -1107,7 +1152,6 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
   const [dur,setDur]=useState("30");
   const [freq,setFreq]=useState("10");
   const [intensity,setIntensity]=useState(initialIntensity);
-  const pinned=presets.filter(p=>p.isPinned);
   const allowCustomize=!isTourActive||tourStep===5;
   const allowCustomEdit=!isTourActive||tourStep===5;
   const allowStart=!isTourActive||tourStep===6;
@@ -1140,7 +1184,7 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
               <div className="flex items-center justify-between"><div><span className="font-bold text-sm">Standard Session</span><span className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-bold" style={{background:`${C.cyan}20`,color:C.cyanDark}}>Default</span><p className="text-xs text-gray-400 mt-1">30 min · 10 Hz</p></div>{selected==="default"&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div>
             </button>
           </div>
-          {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button disabled={isTourActive} key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
+          {presets.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Your Presets</span><div className="space-y-2">{presets.map(p=>(<button disabled={isTourActive} key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2">{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
           <div className={cn(isTourActive&&tourStep===5&&cn(TOUR_TARGET,"rounded-2xl p-2 bg-white"))}>
             {isTourActive&&tourStep===5&&<p className="text-xs font-bold text-cyan-800 mb-2">Step 4: Tap Customize, then edit a value</p>}
             {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className="w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40"><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className={cn("p-4",isTourActive&&tourStep===5&&TOUR_NUMERIC_PANEL)} style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-cyan-300")}/></div></div></Card>}
@@ -1457,9 +1501,7 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
     setSaved(true);
     setTimeout(()=>setSaved(false),2000);
   };
-  const addPreset=()=>{if(!pName.trim())return;onUpdatePresets([...presets,{id:Date.now().toString(),name:pName.trim(),duration:parseInt(pDur)||30,frequency:parseInt(pFreq)||10,isPinned:false}]);setPName("");setPDur("30");setPFreq("10");};
-  const primaryDx=getPrimaryDiagnosis(form.pfdTypes||{});
-  const dx=primaryDx?PSEUDODIAGNOSIS[primaryDx]:null;
+  const addPreset=()=>{if(!pName.trim())return;onUpdatePresets([...presets,{id:Date.now().toString(),name:pName.trim(),duration:parseInt(pDur)||30,frequency:parseInt(pFreq)||10}]);setPName("");setPDur("30");setPFreq("10");};
 
   const toggle24=(v)=>{ setForm({...form,use24:v}); };
 
@@ -1525,15 +1567,6 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
               </div>
             </Card>
 
-            {dx&&(
-              <Card className="p-5" style={{background:dx.bg,border:dx.border}}>
-                <div className="flex items-center gap-2 mb-2"><Brain className="w-4 h-4 text-gray-400"/><span className="text-xs font-black text-gray-400 uppercase tracking-wider">Your likely condition</span></div>
-                <h3 className="font-black text-base mb-2" style={{color:dx.text}}>{dx.title}</h3>
-                <p className="text-xs text-gray-600 leading-relaxed">{dx.body}</p>
-                <p className="text-[10px] text-gray-400 mt-3">Informational only — not a medical diagnosis. Confirm with your provider.</p>
-              </Card>
-            )}
-
             <button onClick={handleSave} disabled={!hasPfdSelected} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
               <Save className="w-4 h-4"/>{saved?"Saved!":"Save All Settings"}
             </button>
@@ -1554,7 +1587,7 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
               </div>
             </Card>
             {presets.length>0?(
-              <div className="space-y-2">{presets.map(p=>(<Card key={p.id} className="p-4" style={p.isPinned?{borderLeft:`4px solid ${C.cyan}`}:{}}><div className="flex items-center justify-between"><div><div className="flex items-center gap-2"><span className="font-bold text-sm">{p.name}</span>{p.isPinned&&<span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{background:`${C.cyan}20`,color:C.cyanDark}}>Pinned</span>}</div><p className="text-xs text-gray-400 mt-0.5">{p.duration} min · {p.frequency} Hz</p></div><div className="flex gap-2"><button onClick={()=>onUpdatePresets(presets.map(x=>x.id===p.id?{...x,isPinned:!x.isPinned}:x))} className="h-9 w-9 rounded-xl border-2 border-gray-200 flex items-center justify-center hover:bg-gray-50">{p.isPinned?<PinOff className="w-4 h-4 text-gray-500"/>:<Pin className="w-4 h-4 text-gray-500"/>}</button><button onClick={()=>onUpdatePresets(presets.filter(x=>x.id!==p.id))} className="h-9 w-9 rounded-xl flex items-center justify-center hover:bg-red-50" style={{border:"2px solid #fca5a5"}}><Trash2 className="w-4 h-4 text-red-400"/></button></div></div></Card>))}</div>
+              <div className="space-y-2">{presets.map(p=>(<Card key={p.id} className="p-4"><div className="flex items-center justify-between"><div><div className="flex items-center gap-2"><span className="font-bold text-sm">{p.name}</span></div><p className="text-xs text-gray-400 mt-0.5">{p.duration} min · {p.frequency} Hz</p></div><div className="flex gap-2"><button onClick={()=>onUpdatePresets(presets.filter(x=>x.id!==p.id))} className="h-9 w-9 rounded-xl flex items-center justify-center hover:bg-red-50" style={{border:"2px solid #fca5a5"}}><Trash2 className="w-4 h-4 text-red-400"/></button></div></div></Card>))}</div>
             ):(
               <Card className="p-8 text-center"><Activity className="w-10 h-10 mx-auto mb-2" style={{color:"#e5e7eb"}}/><h3 className="font-bold text-sm mb-1 text-gray-600">No Presets Yet</h3><p className="text-xs text-gray-400">Create your first preset above.</p></Card>
             )}
@@ -2173,6 +2206,7 @@ export default function App(){
       {screen==="schedule"&&<ScheduleScreen onNav={nav} alarms={alarms} onUpdateAlarms={setAlarms} use24={use24}/>}
       {screen==="diary"&&<DiaryScreen
         onNav={nav}
+        settings={settings}
         diaryEntries={diaryEntries}
         onSaveDiary={setDiaryEntries}
         use24={use24}
