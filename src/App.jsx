@@ -90,7 +90,7 @@ const fmtAlarmTime=(timeStr,use24)=>{
 };
 
 const BG="bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100";
-const TOUR_TARGET="ring-4 ring-cyan-300 animate-pulse outline outline-4 outline-red-500 outline-offset-2";
+const TOUR_TARGET="ring-4 ring-yellow-300 animate-pulse outline outline-4 outline-yellow-400 outline-offset-2 shadow-2xl shadow-yellow-300/70";
 
 // ─── PelviStim Logo SVG ───────────────────────────────────────────────────────
 function PelviStimLogo({size=36}){
@@ -1086,7 +1086,7 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
             </button>
           </div>
           {pinned.length>0&&(<div><span className="text-sm font-bold text-gray-500 block mb-2">Pinned Presets</span><div className="space-y-2">{pinned.map(p=>(<button disabled={isTourActive} key={p.id} onClick={()=>{setSelected(p.id);setShowCustom(false);}} className="w-full p-4 rounded-xl border-2 text-left transition-all disabled:opacity-40" style={{borderColor:selected===p.id&&!showCustom?C.cyan:"#e5e7eb",background:selected===p.id&&!showCustom?"#e8f9fb":"white"}}><div className="flex items-center justify-between"><div><span className="font-bold text-sm flex items-center gap-2"><Pin className="w-3.5 h-3.5" style={{color:C.navy}}/>{p.name}</span><p className="text-xs text-gray-400 mt-1">{p.duration} min · {p.frequency} Hz</p></div>{selected===p.id&&!showCustom&&<CheckCircle2 className="w-5 h-5" style={{color:C.cyan}}/>}</div></button>))}</div></div>)}
-          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&TOUR_TARGET)}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-red-400")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-red-400")}/></div></div></Card>}
+          {!showCustom?<button disabled={!allowCustomize} onClick={()=>{setShowCustom(true);setSelected(null);onTourCustomizeOpen?.();}} className={cn("w-full h-11 rounded-2xl border-2 border-gray-200 bg-white text-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-40",isTourActive&&tourStep===5&&TOUR_TARGET)}><Plus className="w-4 h-4"/>Customize (One-Time)</button>:<Card className="p-4" style={{borderColor:`${C.mint}30`,borderWidth:1.5}}><div className="flex items-center justify-between mb-3"><span className="text-sm font-bold">Custom Session</span><button disabled={isTourActive} onClick={()=>{setShowCustom(false);setSelected("default");}} className="h-7 w-7 rounded-lg bg-gray-100 flex items-center justify-center disabled:opacity-40"><X className="w-3.5 h-3.5 text-gray-500"/></button></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-400 font-semibold">Duration (min)</label><input disabled={!allowCustomEdit} type="number" min="1" max="120" value={dur} onChange={e=>setDurWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-yellow-400")}/></div><div><label className="text-[10px] text-gray-400 font-semibold">Frequency (Hz)</label><input disabled={!allowCustomEdit} type="number" min="1" max="100" value={freq} onChange={e=>setFreqWithTour(e.target.value)} className={cn("w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none mt-1 disabled:opacity-40",isTourActive&&tourStep===5&&"ring-2 ring-yellow-400")}/></div></div></Card>}
           <div className="flex gap-3 pt-2">
             <button disabled={!allowBack} onClick={onBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2 disabled:opacity-40"><ArrowLeft className="w-4 h-4"/>Back</button>
             <button onClick={handleStart} disabled={!selected&&!showCustom||!allowStart} className={cn("flex-1 h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 disabled:opacity-50",isTourActive&&tourStep===6&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}40`}}><Play className="w-5 h-5"/>Start Session</button>
@@ -1381,33 +1381,23 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
-function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout,isAuthenticated=false,onOpenAuthStart}){
+function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}){
   const [tab,setTab]=useState("profile");
   const [form,setForm]=useState(settings);
   const [saved,setSaved]=useState(false);
   const [pName,setPName]=useState("");const [pDur,setPDur]=useState("30");const [pFreq,setPFreq]=useState("10");
-  const handleSave=()=>{onSave(form);setSaved(true);setTimeout(()=>setSaved(false),2000);};
+  const hasPfdSelected=Object.values(form.pfdTypes||{}).some(Boolean);
+  const handleSave=()=>{
+    if(!hasPfdSelected) return;
+    onSave(form);
+    setSaved(true);
+    setTimeout(()=>setSaved(false),2000);
+  };
   const addPreset=()=>{if(!pName.trim())return;onUpdatePresets([...presets,{id:Date.now().toString(),name:pName.trim(),duration:parseInt(pDur)||30,frequency:parseInt(pFreq)||10,isPinned:false}]);setPName("");setPDur("30");setPFreq("10");};
   const primaryDx=getPrimaryDiagnosis(form.pfdTypes||{});
   const dx=primaryDx?PSEUDODIAGNOSIS[primaryDx]:null;
 
-  const toggle24=(v)=>{ const nf={...form,use24:v}; setForm(nf); onSave(nf); };
-
-  if(!isAuthenticated){
-    return(
-      <div className={cn("min-h-screen pb-28",BG)}>
-        <div className="max-w-2xl mx-auto p-6 space-y-5">
-          <div><h1 className="text-2xl font-black" style={{color:C.navy}}>Settings</h1><p className="text-sm text-gray-500">Log in or create an account from here</p></div>
-          <Card className="p-6">
-            <h2 className="text-lg font-black mb-1" style={{color:C.navy}}>Account Required for Sync</h2>
-            <p className="text-sm text-gray-500 mb-4">Create or log into an account in Settings to save and sync your data.</p>
-            <button onClick={onOpenAuthStart} className="w-full h-11 rounded-2xl text-white font-bold text-sm" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Log In or Create Account</button>
-          </Card>
-        </div>
-        <BottomNav current="settings" onNav={onNav}/>
-      </div>
-    );
-  }
+  const toggle24=(v)=>{ setForm({...form,use24:v}); };
 
   return(
     <div className={cn("min-h-screen pb-28",BG)}>
@@ -1442,7 +1432,7 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout,
                 </div>
               </div>
 
-              <button onClick={handleSave} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}30`}}>
+              <button onClick={handleSave} disabled={!hasPfdSelected} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}30`}}>
                 <Save className="w-4 h-4"/>{saved?"Saved!":"Save Profile"}
               </button>
             </div></Card>
@@ -1450,6 +1440,7 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout,
             <Card className="p-5">
               <h3 className="font-black text-sm mb-1" style={{color:C.navy}}>Symptom Type</h3>
               <p className="text-xs text-gray-400 mb-3">Select all that apply</p>
+              {!hasPfdSelected&&<p className="text-[11px] text-amber-700 mb-2">Choose at least one symptom type to save settings.</p>}
               <div className="space-y-2">
                 {Object.entries(INCONTINENCE_SUBTYPES).map(([k,v])=>{
                   const {Icon,accent}=v;const checked=!!form.pfdTypes?.[k];
@@ -1473,7 +1464,7 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout,
               </Card>
             )}
 
-            <button onClick={handleSave} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+            <button onClick={handleSave} disabled={!hasPfdSelected} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
               <Save className="w-4 h-4"/>{saved?"Saved!":"Save All Settings"}
             </button>
           </div>
@@ -1701,14 +1692,11 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
             )}
           </div>
         </div>
-        <div className="h-14 w-14 rounded-full border-2 border-white shadow-md flex items-center justify-center relative" style={{background:`linear-gradient(135deg,#f59e0b33,#f9731633)`}}>
-          <div className="absolute -top-1.5 left-2.5 h-3.5 w-3.5 rounded-full border border-amber-300 bg-amber-200"/>
-          <div className="absolute -top-1.5 right-2.5 h-3.5 w-3.5 rounded-full border border-amber-300 bg-amber-200"/>
-          <div className="h-9 w-9 rounded-full bg-amber-100 border border-amber-300 relative">
-            <div className="absolute top-2.5 left-2 h-1.5 w-1.5 rounded-full bg-amber-900"/>
-            <div className="absolute top-2.5 right-2 h-1.5 w-1.5 rounded-full bg-amber-900"/>
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 h-3 w-4 rounded-full bg-amber-200 border border-amber-300"/>
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-2.5 h-1.5 w-1.5 rounded-full bg-amber-700"/>
+        <div className="h-12 w-12 rounded-full border-2 border-white shadow-md flex items-center justify-center" style={{background:`linear-gradient(135deg,${C.cyan}25,${C.mint}25)`}}>
+          <div className="h-8 w-8 rounded-full bg-white/95 border border-gray-200 relative">
+            <div className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-gray-700"/>
+            <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-gray-700"/>
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 h-2 w-4 border-b-2 border-gray-700 rounded-b-full"/>
           </div>
         </div>
       </div>
@@ -1986,6 +1974,16 @@ export default function App(){
     else if(key==="diary")setScreen("diary");
   },[isTourActive,tourStep]);
 
+  if(!isAuthenticated){
+    if(authStep==="start"){
+      return <AuthLandingScreen hasAccount={!!authProfile} onChooseLogin={()=>setAuthStep("login")} onChooseCreate={()=>setAuthStep("create")}/>;
+    }
+    if(authStep==="create"){
+      return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
+    }
+    return <LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setAuthStep("start")}/>;
+  }
+
   return(
     <div className="h-full w-full overflow-auto" style={{fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;0,9..40,900&display=swap');`}</style>
@@ -2059,10 +2057,7 @@ export default function App(){
         onBackToSession={()=>setScreen("precheck")}
       />}
 
-      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout} isAuthenticated={isAuthenticated} onOpenAuthStart={()=>setScreen("settings-auth-start")}/>}
-      {screen==="settings-auth-start"&&<AuthLandingScreen hasAccount={!!authProfile} onChooseLogin={()=>setScreen("settings-auth-login")} onChooseCreate={()=>setScreen("settings-auth-create")}/>}
-      {screen==="settings-auth-login"&&<LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setScreen("settings-auth-start")}/>}
-      {screen==="settings-auth-create"&&<OnboardingScreen onComplete={handleOnboardingComplete}/>}
+      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout}/>}
       {tourStep!==null&&<IntroCoachmark
         step={tourStep}
         total={10}
