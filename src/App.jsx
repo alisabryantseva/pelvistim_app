@@ -1854,14 +1854,7 @@ export default function App(){
       }));
     }
     setIsAuthenticated(true);
-    if(!introDone){
-      setTourStep(0);
-      setTourProgress({intensityAdjusted:false,electrodeChecked:false,spreadChecked:false,customOpened:false,customEdited:false});
-      setGuidesInit("menu");
-      setScreen("guides");
-    }else{
-      setScreen("welcome");
-    }
+    setScreen("welcome");
   };
 
   const finishTour=()=>{
