@@ -1242,6 +1242,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
   const [expandedFaq,setExpandedFaq]=useState(null);
   const goToMenu=()=>setSection("menu");
   const lockToSequence=forceSequence&&!fromSession;
+  const highlightActions=forceSequence;
 
   useEffect(()=>{
     if(lockToSequence&&section==="menu"){
@@ -1320,21 +1321,21 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
             {showForwardHint&&<p className="text-xs font-bold text-cyan-800 text-center mb-2">Use the highlighted button below to move forward.</p>}
             <div className="flex gap-3 mt-6">
               {step>0&&<button onClick={()=>setStep(step-1)} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2"><ArrowLeft className="w-4 h-4"/>Previous</button>}
-              {!isLast&&<button onClick={()=>setStep(step+1)} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Next<ChevronRight className="w-4 h-4"/></button>}
-              {isLast&&!fromSession&&!lockToSequence&&<button onClick={goToMenu} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}><CheckCircle2 className="w-4 h-4"/>Done — Back to Guides</button>}
+              {!isLast&&<button onClick={()=>setStep(step+1)} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",highlightActions&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>Next<ChevronRight className="w-4 h-4"/></button>}
+              {isLast&&!fromSession&&!lockToSequence&&<button onClick={goToMenu} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",highlightActions&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}><CheckCircle2 className="w-4 h-4"/>Done — Back to Guides</button>}
               {isLast&&!fromSession&&lockToSequence&&(
-                <button onClick={()=>setSection("calibration")} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+                <button onClick={()=>setSection("calibration")} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",highlightActions&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
                   <ArrowRight className="w-4 h-4"/>Next Guide: Calibration
                 </button>
               )}
               {isLast&&fromSession&&(
-                <button onClick={()=>setSection("calibration")} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+                <button onClick={()=>setSection("calibration")} className={cn("flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",highlightActions&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
                   <ArrowRight className="w-4 h-4"/>Next: Calibration Guide
                 </button>
               )}
             </div>
             {isLast&&fromSession&&(
-              <button onClick={handleExit} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 mt-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
+              <button onClick={handleExit} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 mt-2",highlightActions&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
                 <CheckCircle2 className="w-4 h-4"/>Done — Back to Setup
               </button>
             )}
@@ -1380,7 +1381,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
             <CheckCircle2 className="w-4 h-4"/>{fromSession?"Done — Back to Setup":"Done — Back to Guides"}
           </button>}
           {lockToSequence&&(
-            <button onClick={onTourGuidesComplete} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
+            <button onClick={onTourGuidesComplete} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",highlightActions&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDark})`}}>
               <CheckCircle2 className="w-4 h-4"/>Finish Guides and Continue
             </button>
           )}
@@ -1398,7 +1399,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
         <Card className="p-5" style={{background:"linear-gradient(135deg,#e8faf4,#e8f9fb)",border:"none"}}><div className="flex items-center gap-2 mb-3"><Shield className="w-5 h-5" style={{color:C.mint}}/><h2 className="font-black text-base" style={{color:C.navy}}>What to Expect</h2></div><div className="space-y-3 text-sm text-gray-600"><div className="flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{color:C.mint}}/><p><strong>During a session:</strong> Gentle tingling near ankle — never painful.</p></div><div className="flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{color:C.mint}}/><p><strong>Recommended:</strong> Daily sessions of 30 minutes (adjustable).</p></div><div className="flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{color:C.mint}}/><p><strong>Timeline:</strong> Most see improvement in 6–8 weeks with daily use.</p></div></div></Card>
         <Card className="p-5"><div className="flex items-center gap-2 mb-3"><HelpCircle className="w-5 h-5" style={{color:C.cyan}}/><h2 className="font-black text-base" style={{color:C.navy}}>Frequently Asked Questions</h2></div><div className="space-y-1">{faqs.map((faq,i)=>(<div key={i}><button onClick={()=>setExpandedFaq(expandedFaq===i?null:i)} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 text-left"><span className="font-bold text-sm pr-2">{faq.q}</span>{expandedFaq===i?<ChevronUp className="w-4 h-4 text-gray-400 shrink-0"/>:<ChevronDown className="w-4 h-4 text-gray-400 shrink-0"/>}</button>{expandedFaq===i&&<div className="px-3 pb-3"><p className="text-xs text-gray-600 rounded-lg p-3 leading-relaxed" style={{background:"#e8f9fb"}}>{faq.a}</p></div>}</div>))}</div></Card>
         {lockToSequence&&(
-          <button onClick={()=>{setStep(0);setSection("device-setup");}} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
+          <button onClick={()=>{setStep(0);setSection("device-setup");}} className={cn("w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2",highlightActions&&TOUR_TARGET)} style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`}}>
             Next Guide: Device Setup <ArrowRight className="w-4 h-4"/>
           </button>
         )}
