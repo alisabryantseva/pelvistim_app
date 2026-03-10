@@ -526,6 +526,15 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
     onTourDayOpen?.(day);
   };
 
+  const isEmptyEntry=(data)=>(
+    (data.urgencyEpisodes||0)===0&&
+    (data.leakageEpisodes||0)===0&&
+    (data.daytimeVoids||0)===0&&
+    (data.nighttimeVoids||0)===0&&
+    (data.fecalIncontinenceEpisodes||0)===0&&
+    (data.bowelMovements||0)===0
+  );
+
   const updateAndSave=(field,val)=>{
     const newForm={...form,[field]:Math.max(0,val)};
     setForm(newForm);
@@ -535,9 +544,13 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
         return;
       }
       const existing=diaryEntries.find(e=>sameDay(e.date,activeDay));
-      const entry={id:existing?existing.id:Date.now().toString(),weekKey:getWeekKey(activeDay),date:new Date(activeDay),completed:true,...newForm};
-      if(existing)onSaveDiary(diaryEntries.map(e=>e.id===existing.id?entry:e));
-      else onSaveDiary([...diaryEntries,entry]);
+      if(isEmptyEntry(newForm)){
+        if(existing)onSaveDiary(diaryEntries.filter(e=>e.id!==existing.id));
+      }else{
+        const entry={id:existing?existing.id:Date.now().toString(),weekKey:getWeekKey(activeDay),date:new Date(activeDay),completed:true,...newForm};
+        if(existing)onSaveDiary(diaryEntries.map(e=>e.id===existing.id?entry:e));
+        else onSaveDiary([...diaryEntries,entry]);
+      }
       onTourSymptomLog?.(field,newForm[field]);
     }
   };
