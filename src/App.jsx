@@ -90,7 +90,7 @@ const fmtAlarmTime=(timeStr,use24)=>{
 };
 
 const BG="bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100";
-const TOUR_TARGET="relative z-[115] ring-2 ring-white outline outline-2 outline-cyan-300 shadow-[0_0_0_4px_rgba(29,78,137,0.35)] animate-pulse";
+const TOUR_TARGET="relative z-[115] ring-2 ring-cyan-300 shadow-[0_0_0_3px_rgba(255,255,255,0.95),0_0_20px_rgba(29,78,137,0.25)]";
 
 // ─── PelviStim Logo SVG ───────────────────────────────────────────────────────
 function PelviStimLogo({size=36}){
@@ -1706,7 +1706,7 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
 
 function TourFocusOverlay({active=false}){
   if(!active) return null;
-  return <div className="fixed inset-0 z-[110] pointer-events-none bg-black/40"/>;
+  return <div className="fixed inset-0 z-[110] pointer-events-none bg-black/18"/>;
 }
 
 // ─── Reminder Popup ───────────────────────────────────────────────────────────
