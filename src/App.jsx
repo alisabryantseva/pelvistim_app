@@ -637,8 +637,19 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
                 <h3 className="font-bold text-sm">{fmt(activeDay,{weekday:"long",month:"long",day:"numeric"})}</h3>
                 <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" style={{color:C.mint}}/> Saves automatically</p>
               </div>
-              <button onClick={()=>setActiveDay(null)} disabled={!allowSymptomEdit||onlyUrgencyControl} className="h-8 w-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-40">
-                <X className="w-4 h-4 text-gray-500"/>
+              <button
+                onClick={()=>{
+                  if(!activeDay)return;
+                  const cleared={urgencyEpisodes:0,leakageEpisodes:0,daytimeVoids:0,nighttimeVoids:0,fecalIncontinenceEpisodes:0,bowelMovements:0};
+                  setForm(cleared);
+                  if(isTourActive)return;
+                  const existing=diaryEntries.find(e=>sameDay(e.date,activeDay));
+                  if(existing)onSaveDiary(diaryEntries.filter(e=>e.id!==existing.id));
+                }}
+                disabled={!allowSymptomEdit||onlyUrgencyControl}
+                className="h-8 px-3 rounded-xl bg-gray-100 text-[10px] font-bold text-gray-600 hover:bg-gray-200 disabled:opacity-40"
+              >
+                Clear logged day
               </button>
             </div>
 
