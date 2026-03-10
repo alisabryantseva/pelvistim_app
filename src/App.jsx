@@ -72,8 +72,11 @@ const addDays=(d,n)=>new Date(d.getTime()+n*DAY_MS);
 const getWeekKey=(d)=>{const ws=startOfWeek(d);return`${ws.getFullYear()}-${ws.getMonth()}-${ws.getDate()}`;};
 const weekDayLetters=["S","M","T","W","T","F","S"];
 const weekDaysFull=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const weekdayNameToIndex={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
 const cn=(...c)=>c.filter(Boolean).join(" ");
 const roundHalf=(n)=>Math.round(n*2)/2;
+const defaultTimeZone=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||"America/New_York";}catch{return"America/New_York";}})();
+const TIMEZONE_OPTIONS=(()=>{try{return Intl.supportedValuesOf("timeZone");}catch{return["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","UTC"];}})();
 
 const fmtTimeDisplay=(d,use24)=>{
   const dt=new Date(d);
@@ -88,6 +91,34 @@ const fmtAlarmTime=(timeStr,use24)=>{
   const h12=h%12||12;
   return `${h12}:${String(m).padStart(2,"0")} ${ampm}`;
 };
+const two=(n)=>String(n).padStart(2,"0");
+const ymd=(y,m,d)=>`${y}-${two(m)}-${two(d)}`;
+function getZonedParts(date,timeZone){
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false,weekday:"short"}).formatToParts(date);
+  const get=(type)=>parts.find(p=>p.type===type)?.value||"";
+  return{
+    year:Number(get("year")),
+    month:Number(get("month")),
+    day:Number(get("day")),
+    hour:Number(get("hour")),
+    minute:Number(get("minute")),
+    weekday:weekdayNameToIndex[get("weekday")]??0,
+  };
+}
+function addDaysToYmd(y,m,d,delta){
+  const dt=new Date(Date.UTC(y,m-1,d));
+  dt.setUTCDate(dt.getUTCDate()+delta);
+  return ymd(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate());
+}
+function getTriggerSpec(alarm){
+  const [h,m]=String(alarm.time||"00:00").split(":").map(Number);
+  const lead=alarm.alarmType==="reminder"?(alarm.leadMins||10):0;
+  let triggerMin=(h*60+m)-lead;
+  let dayShift=0;
+  while(triggerMin<0){triggerMin+=1440;dayShift-=1;}
+  while(triggerMin>=1440){triggerMin-=1440;dayShift+=1;}
+  return{hour:Math.floor(triggerMin/60),minute:triggerMin%60,dayShift};
+}
 
 const BG="bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100";
 const TOUR_TARGET="relative z-[115] ring-4 ring-red-400 shadow-[0_0_0_3px_rgba(254,226,226,0.95),0_0_24px_rgba(239,68,68,0.55)] animate-pulse";
@@ -1439,6 +1470,13 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Education Level</label><select value={form.education||""} onChange={e=>setForm({...form,education:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{EDUCATION_LEVELS.map(l=><option key={l}>{l}</option>)}</select></div>
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Race / Ethnicity</label><select value={form.raceEthnicity||""} onChange={e=>setForm({...form,raceEthnicity:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{RACE_ETHNICITY_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
               </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Time Zone</label>
+                <input list="timezone-options" value={form.timezone||defaultTimeZone} onChange={e=>setForm({...form,timezone:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"/>
+                <datalist id="timezone-options">
+                  {TIMEZONE_OPTIONS.map(z=><option key={z} value={z}/>)}
+                </datalist>
+              </div>
 
               <div className="flex items-center justify-between p-3 rounded-xl" style={{background:"#f8fafc",border:"1.5px solid #e5e7eb"}}>
                 <div><p className="text-sm font-bold text-gray-700">Time Format</p><p className="text-xs text-gray-400">Used in Schedule and sessions</p></div>
@@ -1530,6 +1568,7 @@ function OnboardingScreen({onComplete}){
     gender:"",
     education:"",
     raceEthnicity:"",
+    timezone:defaultTimeZone,
   });
 
   const canContinueProfile=!!form.firstName.trim()&&!!form.lastName.trim()&&!!form.email.trim()&&!!form.password.trim();
@@ -1546,6 +1585,7 @@ function OnboardingScreen({onComplete}){
         gender:form.gender||"",
         education:form.education||"",
         raceEthnicity:form.raceEthnicity||"",
+        timezone:form.timezone||defaultTimeZone,
         pfdTypes:form.pfdTypes,
       },
     });
@@ -1610,6 +1650,13 @@ function OnboardingScreen({onComplete}){
                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Education</label><select value={form.education} onChange={e=>setForm({...form,education:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{EDUCATION_LEVELS.map(l=><option key={l}>{l}</option>)}</select></div>
               </div>
               <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Race / Ethnicity</label><select value={form.raceEthnicity} onChange={e=>setForm({...form,raceEthnicity:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{RACE_ETHNICITY_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Time Zone</label>
+                <input list="timezone-options" value={form.timezone} onChange={e=>setForm({...form,timezone:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"/>
+                <datalist id="timezone-options">
+                  {TIMEZONE_OPTIONS.map(z=><option key={z} value={z}/>)}
+                </datalist>
+              </div>
             </div>
           )}
 
@@ -1773,7 +1820,7 @@ export default function App(){
   const [tourStep,setTourStep]=useState(null);
   const [,setTourProgress]=useState({intensityAdjusted:false,electrodeChecked:false,spreadChecked:false,customOpened:false,customEdited:false});
   const [authStep,setAuthStep]=useState("start");
-  const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",raceEthnicity:"",use24:false,pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,fecal:false,constipation:false,pelvicPain:false}});
+  const [settings,setSettings]=useState({name:"",email:"",age:"",weight:"",gender:"",education:"",raceEthnicity:"",timezone:defaultTimeZone,use24:false,pfdTypes:{urge:false,urgency:false,frequency:false,hesitancy:false,fecal:false,constipation:false,pelvicPain:false}});
 
   const use24=settings.use24||false;
   const isTourActive=tourStep!==null;
@@ -1792,10 +1839,12 @@ export default function App(){
 
       // Backward compatibility for single-account storage shape.
       if(parsed?.profile){
+        const migratedSettings={...(parsed.settings||{})};
+        if(!migratedSettings.timezone) migratedSettings.timezone=defaultTimeZone;
         const migrated={
           id:`acct_${Date.now()}`,
           profile:parsed.profile,
-          settings:parsed.settings||null,
+          settings:migratedSettings,
           onboardingComplete:!!parsed.onboardingComplete,
           introDone:parsed.introDone ?? !!parsed.onboardingComplete,
           sessions:Array.isArray(parsed.sessions)?parsed.sessions:[],
@@ -1844,12 +1893,36 @@ export default function App(){
 
   useEffect(()=>{
     if(!isAuthenticated) return;
-    const t=setTimeout(()=>{
-      const a=alarms.find(x=>x.active&&x.alarmType==="reminder");
-      if(a)setActiveReminder(a);
-    },5000);
-    return()=>clearTimeout(t);
-  },[isAuthenticated,alarms]);
+    const firedKeys=new Set();
+    const tick=()=>{
+      const tz=settings.timezone||defaultTimeZone;
+      const now=new Date();
+      const zp=getZonedParts(now,tz);
+      const currentMinuteKey=`${ymd(zp.year,zp.month,zp.day)} ${two(zp.hour)}:${two(zp.minute)}`;
+      for(const a of alarms){
+        if(!a?.active||!a.time) continue;
+        const {hour,minute,dayShift}=getTriggerSpec(a);
+        if(zp.hour!==hour||zp.minute!==minute) continue;
+
+        if(a.isRecurring!==false){
+          const sessionDay=(zp.weekday-dayShift+7)%7;
+          if(!a.days?.[sessionDay]) continue;
+        }else{
+          if(!a.oneTimeDate) continue;
+          const sessionDate=addDaysToYmd(zp.year,zp.month,zp.day,-dayShift);
+          if(sessionDate!==a.oneTimeDate) continue;
+        }
+
+        const key=`${a.id}|${currentMinuteKey}`;
+        if(firedKeys.has(key)) continue;
+        firedKeys.add(key);
+        setActiveReminder(a);
+      }
+    };
+    tick();
+    const t=setInterval(tick,20000);
+    return()=>clearInterval(t);
+  },[isAuthenticated,alarms,settings.timezone]);
 
   const handleSaveSettings=(s)=>{setSettings(s);setStoredSettings(s);};
 
@@ -1912,12 +1985,14 @@ export default function App(){
         ...account.settings,
         email:account.profile?.email||account.settings.email||prev.email,
         name:account.settings.name||`${account.profile?.firstName||""} ${account.profile?.lastName||""}`.trim(),
+        timezone:account.settings.timezone||defaultTimeZone,
       }));
     }else{
       setSettings(prev=>({
         ...prev,
         email:account.profile?.email||prev.email,
         name:`${account.profile?.firstName||""} ${account.profile?.lastName||""}`.trim()||prev.name,
+        timezone:prev.timezone||defaultTimeZone,
       }));
     }
     setSessions(Array.isArray(account.sessions)?account.sessions:[]);
