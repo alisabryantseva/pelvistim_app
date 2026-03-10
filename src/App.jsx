@@ -76,7 +76,20 @@ const weekdayNameToIndex={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
 const cn=(...c)=>c.filter(Boolean).join(" ");
 const roundHalf=(n)=>Math.round(n*2)/2;
 const defaultTimeZone=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||"America/New_York";}catch{return"America/New_York";}})();
-const TIMEZONE_OPTIONS=(()=>{try{return Intl.supportedValuesOf("timeZone");}catch{return["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","UTC"];}})();
+const COMMON_TIMEZONES=[
+  {label:"EST / EDT (New York)",value:"America/New_York"},
+  {label:"CST / CDT (Chicago)",value:"America/Chicago"},
+  {label:"MST / MDT (Denver)",value:"America/Denver"},
+  {label:"PST / PDT (Los Angeles)",value:"America/Los_Angeles"},
+  {label:"AKST / AKDT (Anchorage)",value:"America/Anchorage"},
+  {label:"HST (Honolulu)",value:"Pacific/Honolulu"},
+  {label:"UTC",value:"UTC"},
+  {label:"GMT / BST (London)",value:"Europe/London"},
+  {label:"CET / CEST (Berlin)",value:"Europe/Berlin"},
+  {label:"IST (India)",value:"Asia/Kolkata"},
+  {label:"JST (Tokyo)",value:"Asia/Tokyo"},
+  {label:"AEST / AEDT (Sydney)",value:"Australia/Sydney"},
+];
 
 const fmtTimeDisplay=(d,use24)=>{
   const dt=new Date(d);
@@ -1475,10 +1488,9 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Time Zone</label>
-                <input list="timezone-options" value={form.timezone||defaultTimeZone} onChange={e=>setForm({...form,timezone:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"/>
-                <datalist id="timezone-options">
-                  {TIMEZONE_OPTIONS.map(z=><option key={z} value={z}/>)}
-                </datalist>
+                <select value={form.timezone||defaultTimeZone} onChange={e=>setForm({...form,timezone:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white">
+                  {COMMON_TIMEZONES.map(z=><option key={z.value} value={z.value}>{z.label}</option>)}
+                </select>
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-xl" style={{background:"#f8fafc",border:"1.5px solid #e5e7eb"}}>
@@ -1655,10 +1667,9 @@ function OnboardingScreen({onComplete}){
               <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Race / Ethnicity</label><select value={form.raceEthnicity} onChange={e=>setForm({...form,raceEthnicity:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"><option value="">Select...</option>{RACE_ETHNICITY_OPTIONS.map(l=><option key={l}>{l}</option>)}</select></div>
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Time Zone</label>
-                <input list="timezone-options" value={form.timezone} onChange={e=>setForm({...form,timezone:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white"/>
-                <datalist id="timezone-options">
-                  {TIMEZONE_OPTIONS.map(z=><option key={z} value={z}/>)}
-                </datalist>
+                <select value={form.timezone||defaultTimeZone} onChange={e=>setForm({...form,timezone:e.target.value})} className="w-full h-10 rounded-xl border-2 border-gray-200 px-3 text-sm focus:outline-none bg-white">
+                  {COMMON_TIMEZONES.map(z=><option key={z.value} value={z.value}>{z.label}</option>)}
+                </select>
               </div>
             </div>
           )}
