@@ -90,7 +90,7 @@ const fmtAlarmTime=(timeStr,use24)=>{
 };
 
 const BG="bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100";
-const TOUR_TARGET="relative z-[115] ring-2 ring-cyan-300 shadow-[0_0_0_3px_rgba(255,255,255,0.95),0_0_20px_rgba(29,78,137,0.25)]";
+const TOUR_TARGET="relative z-[115] ring-4 ring-red-400 shadow-[0_0_0_3px_rgba(254,226,226,0.95),0_0_24px_rgba(239,68,68,0.55)] animate-pulse";
 const TOUR_NUMERIC_PANEL="relative z-[115] rounded-2xl bg-white border border-gray-100 shadow-[0_8px_24px_rgba(15,23,42,0.08)]";
 
 // ─── PelviStim Logo SVG ───────────────────────────────────────────────────────
@@ -1641,14 +1641,14 @@ function AuthLandingScreen({hasAccount,onChooseLogin,onChooseCreate}){
   );
 }
 
-function LoginScreen({profile,onLogin,onBackToStart}){
-  const [email,setEmail]=useState(profile?.email||"");
+function LoginScreen({onLogin,onBackToStart}){
+  const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
   const [error,setError]=useState("");
   const submit=()=>{
-    if(email.trim().toLowerCase()===String(profile?.email||"").toLowerCase()&&password===profile?.password){
+    const ok=onLogin(email,password);
+    if(ok){
       setError("");
-      onLogin();
       return;
     }
     setError("Incorrect email or password.");
@@ -1722,7 +1722,7 @@ function IntroCoachmark({step,total,onNext,onSkip,actionRequired=false,actionLab
 
 function TourFocusOverlay({active=false}){
   if(!active) return null;
-  return <div className="fixed inset-0 z-[110] pointer-events-none bg-black/16"/>;
+  return null;
 }
 
 // ─── Reminder Popup ───────────────────────────────────────────────────────────
@@ -1749,6 +1749,7 @@ function ReminderPopup({alarm,onDismiss,onStartSession,use24}){
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App(){
   const AUTH_STORAGE_KEY="pelvistim_auth_v1";
+  const ACCOUNT_STORAGE_VERSION=2;
   const [screen,setScreen]=useState("welcome");
   const [sessions,setSessions]=useState([]);
   const [diaryEntries,setDiaryEntries]=useState([]);
@@ -1762,6 +1763,8 @@ export default function App(){
   const [guidesInit,setGuidesInit]=useState("menu");
   const [pausedSession,setPausedSession]=useState(null);
   const [activeReminder,setActiveReminder]=useState(null);
+  const [accounts,setAccounts]=useState([]);
+  const [currentUserId,setCurrentUserId]=useState(null);
   const [authProfile,setAuthProfile]=useState(null);
   const [storedSettings,setStoredSettings]=useState(null);
   const [onboardingComplete,setOnboardingComplete]=useState(false);
@@ -1780,21 +1783,40 @@ export default function App(){
       const raw=localStorage.getItem(AUTH_STORAGE_KEY);
       if(!raw) return;
       const parsed=JSON.parse(raw);
-      if(parsed?.profile) setAuthProfile(parsed.profile);
-      if(parsed?.settings) setStoredSettings(parsed.settings);
-      if(Array.isArray(parsed?.sessions)) setSessions(parsed.sessions);
-      if(Array.isArray(parsed?.diaryEntries)) setDiaryEntries(parsed.diaryEntries);
-      if(Array.isArray(parsed?.presets)) setPresets(parsed.presets);
-      if(Array.isArray(parsed?.alarms)) setAlarms(parsed.alarms);
-      setOnboardingComplete(!!parsed?.onboardingComplete);
-      setIntroDone(parsed?.introDone ?? !!parsed?.onboardingComplete);
-      if(parsed?.onboardingComplete&&parsed?.profile) setAuthStep("start");
+      if(Array.isArray(parsed?.accounts)){
+        setAccounts(parsed.accounts);
+        setCurrentUserId(parsed.currentUserId||null);
+        if(parsed.accounts.length>0) setAuthStep("start");
+        return;
+      }
+
+      // Backward compatibility for single-account storage shape.
+      if(parsed?.profile){
+        const migrated={
+          id:`acct_${Date.now()}`,
+          profile:parsed.profile,
+          settings:parsed.settings||null,
+          onboardingComplete:!!parsed.onboardingComplete,
+          introDone:parsed.introDone ?? !!parsed.onboardingComplete,
+          sessions:Array.isArray(parsed.sessions)?parsed.sessions:[],
+          diaryEntries:Array.isArray(parsed.diaryEntries)?parsed.diaryEntries:[],
+          presets:Array.isArray(parsed.presets)?parsed.presets:[],
+          alarms:Array.isArray(parsed.alarms)?parsed.alarms:DEFAULT_ALARMS,
+        };
+        setAccounts([migrated]);
+        setCurrentUserId(migrated.id);
+        setAuthStep("start");
+      }
     }catch{}
   },[]);
 
   useEffect(()=>{
-    try{
-      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({
+    if(!currentUserId||!authProfile) return;
+    setAccounts(prev=>{
+      const next=[...prev];
+      const idx=next.findIndex(a=>a.id===currentUserId);
+      const payload={
+        id:currentUserId,
         profile:authProfile,
         settings:storedSettings,
         onboardingComplete,
@@ -1803,9 +1825,22 @@ export default function App(){
         diaryEntries,
         presets,
         alarms,
+      };
+      if(idx>=0) next[idx]=payload;
+      else next.push(payload);
+      return next;
+    });
+  },[currentUserId,authProfile,storedSettings,onboardingComplete,introDone,sessions,diaryEntries,presets,alarms]);
+
+  useEffect(()=>{
+    try{
+      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({
+        version:ACCOUNT_STORAGE_VERSION,
+        currentUserId,
+        accounts,
       }));
     }catch{}
-  },[authProfile,storedSettings,onboardingComplete,introDone,sessions,diaryEntries,presets,alarms]);
+  },[currentUserId,accounts]);
 
   useEffect(()=>{
     if(!isAuthenticated) return;
@@ -1819,6 +1854,25 @@ export default function App(){
   const handleSaveSettings=(s)=>{setSettings(s);setStoredSettings(s);};
 
   const handleOnboardingComplete=({profile,settings:setupSettings})=>{
+    const accountId=`acct_${Date.now()}`;
+    const existingIdx=accounts.findIndex(a=>String(a.profile?.email||"").toLowerCase()===profile.email.toLowerCase());
+    const newAccount={
+      id:accountId,
+      profile,
+      settings:setupSettings,
+      onboardingComplete:true,
+      introDone:false,
+      sessions:[],
+      diaryEntries:[],
+      presets:[],
+      alarms:DEFAULT_ALARMS,
+    };
+    if(existingIdx>=0){
+      setAccounts(prev=>prev.map((a,i)=>i===existingIdx?newAccount:a));
+    }else{
+      setAccounts(prev=>[...prev,newAccount]);
+    }
+    setCurrentUserId(accountId);
     setAuthProfile(profile);
     setSettings(prev=>({
       ...prev,
@@ -1828,6 +1882,10 @@ export default function App(){
       pfdTypes:setupSettings.pfdTypes||prev.pfdTypes,
     }));
     setStoredSettings(setupSettings);
+    setSessions([]);
+    setDiaryEntries([]);
+    setPresets([]);
+    setAlarms(DEFAULT_ALARMS);
     setOnboardingComplete(true);
     setIsAuthenticated(true);
     setIntroDone(false);
@@ -1838,23 +1896,39 @@ export default function App(){
     setAuthStep("start");
   };
 
-  const handleLogin=()=>{
-    if(storedSettings){
+  const handleLogin=(email,password)=>{
+    const account=accounts.find(a=>
+      String(a.profile?.email||"").toLowerCase()===String(email||"").trim().toLowerCase()&&
+      a.profile?.password===password
+    );
+    if(!account) return false;
+
+    setCurrentUserId(account.id);
+    setAuthProfile(account.profile||null);
+    setStoredSettings(account.settings||null);
+    if(account.settings){
       setSettings(prev=>({
         ...prev,
-        ...storedSettings,
-        email:authProfile?.email||storedSettings.email||prev.email,
-        name:storedSettings.name||`${authProfile?.firstName||""} ${authProfile?.lastName||""}`.trim(),
+        ...account.settings,
+        email:account.profile?.email||account.settings.email||prev.email,
+        name:account.settings.name||`${account.profile?.firstName||""} ${account.profile?.lastName||""}`.trim(),
       }));
     }else{
       setSettings(prev=>({
         ...prev,
-        email:authProfile?.email||prev.email,
-        name:`${authProfile?.firstName||""} ${authProfile?.lastName||""}`.trim()||prev.name,
+        email:account.profile?.email||prev.email,
+        name:`${account.profile?.firstName||""} ${account.profile?.lastName||""}`.trim()||prev.name,
       }));
     }
+    setSessions(Array.isArray(account.sessions)?account.sessions:[]);
+    setDiaryEntries(Array.isArray(account.diaryEntries)?account.diaryEntries:[]);
+    setPresets(Array.isArray(account.presets)?account.presets:[]);
+    setAlarms(Array.isArray(account.alarms)?account.alarms:DEFAULT_ALARMS);
+    setOnboardingComplete(!!account.onboardingComplete);
+    setIntroDone(account.introDone ?? !!account.onboardingComplete);
     setIsAuthenticated(true);
     setScreen("welcome");
+    return true;
   };
 
   const finishTour=()=>{
@@ -1990,12 +2064,12 @@ export default function App(){
 
   if(!isAuthenticated){
     if(authStep==="start"){
-      return <AuthLandingScreen hasAccount={!!authProfile} onChooseLogin={()=>setAuthStep("login")} onChooseCreate={()=>setAuthStep("create")}/>;
+      return <AuthLandingScreen hasAccount={accounts.length>0} onChooseLogin={()=>setAuthStep("login")} onChooseCreate={()=>setAuthStep("create")}/>;
     }
     if(authStep==="create"){
       return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
     }
-    return <LoginScreen profile={authProfile} onLogin={handleLogin} onBackToStart={()=>setAuthStep("start")}/>;
+    return <LoginScreen onLogin={handleLogin} onBackToStart={()=>setAuthStep("start")}/>;
   }
 
   return(
