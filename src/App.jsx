@@ -121,7 +121,7 @@ function getTriggerSpec(alarm){
 }
 
 const BG="bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100";
-const TOUR_TARGET="relative z-[115] ring-4 ring-red-400 shadow-[0_0_0_3px_rgba(254,226,226,0.95),0_0_24px_rgba(239,68,68,0.55)] animate-pulse";
+const TOUR_TARGET="relative z-[115] ring-2 ring-white/70 shadow-[0_0_0_6px_rgba(0,178,202,0.18),0_0_26px_rgba(0,178,202,0.45)] animate-pulse";
 const TOUR_NUMERIC_PANEL="relative z-[115] rounded-2xl bg-white border border-gray-100 shadow-[0_8px_24px_rgba(15,23,42,0.08)]";
 
 // ─── PelviStim Logo SVG ───────────────────────────────────────────────────────
@@ -574,15 +574,18 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
       <div className="max-w-2xl mx-auto p-6 space-y-5">
         <div><h1 className="text-2xl font-bold tracking-tight">Voiding Diary</h1><p className="text-sm text-gray-500">Track at least 3 days this month — we extrapolate the rest</p></div>
 
-        <Card className={cn("p-5",isTourActive&&tourStep===7&&TOUR_TARGET)}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-bold">This Month</span>
+        <Card className={cn("p-6",isTourActive&&tourStep===7&&TOUR_TARGET)} style={{background:"linear-gradient(135deg,#ffffff,#f6fbff)"}}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <span className="text-sm font-bold">This Month</span>
+              <p className="text-[10px] text-gray-400 mt-0.5">Tap a day to log symptoms</p>
+            </div>
             <span className="text-xs font-bold px-3 py-1 rounded-full" style={{background:completedDays.length>=3?"#e8faf4":"#e8f9fb",color:completedDays.length>=3?C.mintDark:C.cyanDark}}>{completedDays.length}/3 days logged</span>
           </div>
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {weekDaysFull.map(d=><div key={d} className="text-center text-[9px] text-gray-400 font-semibold py-1">{d}</div>)}
+          <div className="grid grid-cols-7 gap-2 mb-2">
+            {weekDaysFull.map(d=><div key={d} className="text-center text-[10px] text-gray-400 font-semibold py-1">{d}</div>)}
           </div>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-2">
             {calendarDays.map((day,i)=>{
               const inMonth=isSameMonth(day,today);
               const future=isAfterDay(day,today);
@@ -593,12 +596,12 @@ function DiaryScreen({onNav,diaryEntries,onSaveDiary,use24,isTourActive=false,to
               const isActive=activeDay&&sameDay(day,activeDay);
               return(
                 <button key={i} disabled={disabled||!allowDayPick} onClick={()=>!disabled&&allowDayPick&&openDay(day)}
-                  className="aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] transition-all relative border-2"
+                  className="aspect-square rounded-2xl flex flex-col items-center justify-center text-[11px] transition-all relative border-2 shadow-sm"
                   style={{
                     opacity:!inMonth?0.25:future?0.55:1,
                     cursor:disabled||!allowDayPick?"default":"pointer",
                     borderColor:isActive?C.navy:future?"#d1d5db":hasEntry?C.cyan:isToday?C.cyan:"#e5e7eb",
-                    background:isActive?C.navy:future?"#f3f4f6":hasEntry?`${C.cyan}20`:isToday?"#e8f9fb":"white",
+                    background:isActive?C.navy:future?"#f3f4f6":hasEntry?`linear-gradient(135deg,${C.cyan}22,#ffffff)`:isToday?"linear-gradient(135deg,#e8f9fb,#ffffff)":"white",
                     color:isActive?"white":future?"#9ca3af":hasEntry?C.cyanDark:isToday?C.cyanDark:"#374151",
                   }}>
                   {day.getDate()}
