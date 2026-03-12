@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import pelvicFloorDiagramImg from "./assets/pelvic-floor-diagram.png";
 import ankleDeviceImg from "./assets/ankle-device-guide.jpg";
+import { useBluetooth } from "./useBluetooth.js";
 
 // ─── Brand Palette ────────────────────────────────────────────────────────────
 const C = {
@@ -50,6 +51,7 @@ const Repeat=({className})=><svg viewBox="0 0 24 24" className={className} fill=
 const ClipboardList=({className})=><svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>;
 const Info=({className})=><svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
 const Timer=({className})=><svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/></svg>;
+const BluetoothIcon=({className})=><svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>;
 
 const UrgencyIcon=({className})=><svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C12 2 5 10 5 14a7 7 0 0 0 14 0c0-4-7-12-7-12z"/><line x1="12" y1="11" x2="12" y2="14"/><circle cx="12" cy="16.5" r="0.5" fill="currentColor"/></svg>;
 const CupIcon=({className})=><svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 8h10l-1.5 9H8.5L7 8z"/><path d="M5 8h14"/><path d="M9 8V5"/><path d="M15 8V5"/><path d="M9 21h6"/><path d="M12 17v4"/><path d="M17 11h2a2 2 0 0 1 0 4h-2"/></svg>;
@@ -210,6 +212,31 @@ function Toggle({checked,onChange}){
         transition:"left 0.2s",
         display:"block",
       }}/>
+    </button>
+  );
+}
+
+// ─── Bluetooth Status Chip ────────────────────────────────────────────────────
+const BT_COLORS={
+  connected:{bg:"#e8faf4",border:"#4db89b",dot:"#4db89b",text:"#166534"},
+  connecting:{bg:"#fef9e7",border:"#f5a85a",dot:"#f5a85a",text:"#92400e"},
+  error:{bg:"#fef2f2",border:"#ef4444",dot:"#ef4444",text:"#991b1b"},
+  disconnected:{bg:"#f1f5f9",border:"#cbd5e1",dot:"#94a3b8",text:"#64748b"},
+  unsupported:{bg:"#f1f5f9",border:"#cbd5e1",dot:"#94a3b8",text:"#64748b"},
+};
+function BluetoothChip({status,deviceName,onPress,disabled=false}){
+  const col=BT_COLORS[status]||BT_COLORS.disconnected;
+  const label=status==="connected"?(deviceName||"Connected"):status==="connecting"?"Pairing…":status==="unsupported"?"No BT":"Connect";
+  return(
+    <button
+      onClick={onPress}
+      disabled={disabled||status==="unsupported"}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all active:scale-95 disabled:opacity-50"
+      style={{background:col.bg,borderColor:col.border}}
+    >
+      <span className="w-2 h-2 rounded-full shrink-0" style={{background:col.dot,boxShadow:status==="connected"?`0 0 6px ${col.dot}80`:"none"}}/>
+      <BluetoothIcon className="w-3.5 h-3.5" style={{color:col.text}}/>
+      <span className="text-[10px] font-bold" style={{color:col.text,maxWidth:72,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</span>
     </button>
   );
 }
@@ -834,7 +861,7 @@ function DiaryScreen({onNav,settings,diaryEntries,onSaveDiary,use24,isTourActive
 }
 
 // ─── Welcome / Home ───────────────────────────────────────────────────────────
-function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessions,diaryEntries,onOpenCalendar,use24,isTourActive=false,tourStep=null}){
+function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessions,diaryEntries,onOpenCalendar,use24,isTourActive=false,tourStep=null,bt}){
   const [selectedDate,setSelectedDate]=useState(new Date());
   const [weekOffset,setWeekOffset]=useState(0);
   const today=new Date();
@@ -876,9 +903,12 @@ function WelcomeScreen({onStartSession,onResumeSession,pausedSession,onNav,sessi
           <span className="text-base font-black tracking-tight" style={{color:C.navy}}>PelviStim</span>
         </div>
         <h1 className="text-base font-bold text-gray-800">{fmt(selectedDate,{month:"long",day:"numeric"})}</h1>
-        <button disabled={isTourActive} onClick={onOpenCalendar} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/70 hover:bg-white transition-colors disabled:opacity-40">
-          <Calendar className="w-5 h-5" style={{color:C.navy}}/>
-        </button>
+        <div className="flex items-center gap-2">
+          {bt&&<BluetoothChip status={bt.status} deviceName={bt.deviceName} onPress={bt.status==="connected"?bt.disconnect:bt.connect} disabled={isTourActive}/>}
+          <button disabled={isTourActive} onClick={onOpenCalendar} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/70 hover:bg-white transition-colors disabled:opacity-40">
+            <Calendar className="w-5 h-5" style={{color:C.navy}}/>
+          </button>
+        </div>
       </div>
 
       <div className="px-6 pb-4">
@@ -1207,13 +1237,17 @@ function PresetScreen({onStart,onBack,initialIntensity,presets,onNav,isTourActiv
 }
 
 // ─── Session ──────────────────────────────────────────────────────────────────
-function SessionScreen({onComplete,onPause,duration,frequency,initialIntensity,initialRemaining,onNav}){
+function SessionScreen({onComplete,onPause,duration,frequency,initialIntensity,initialRemaining,onNav,btSend=()=>{}}){
   const TOTAL=duration*60;
   const [remaining,setRemaining]=useState(initialRemaining||TOTAL);
   const [paused,setPaused]=useState(false);
   const [intensity,setIntensity]=useState(initialIntensity);
   const [startTime]=useState(new Date());
-  useEffect(()=>{if(paused||remaining<=0)return;const t=setInterval(()=>setRemaining(p=>{if(p<=1){clearInterval(t);setTimeout(()=>onComplete(startTime,new Date(),true),500);return 0;}return p-1;}),1000);return()=>clearInterval(t);},[paused,remaining]);
+  useEffect(()=>{if(paused||remaining<=0)return;const t=setInterval(()=>setRemaining(p=>{if(p<=1){clearInterval(t);setTimeout(()=>{btSend("STOP\n");onComplete(startTime,new Date(),true);},500);return 0;}return p-1;}),1000);return()=>clearInterval(t);},[paused,remaining]);
+  // Send intensity updates to the device whenever the value changes
+  useEffect(()=>{btSend(`I:${intensity.toFixed(1)}\n`);},[intensity]);
+  // Send frequency once on mount
+  useEffect(()=>{btSend(`START\n`);btSend(`F:${frequency}\n`);},[]);
   const mins=String(Math.floor(remaining/60)).padStart(2,"0");
   const secs=String(remaining%60).padStart(2,"0");
   const progress=((TOTAL-remaining)/TOTAL)*100;
@@ -1235,8 +1269,8 @@ function SessionScreen({onComplete,onPause,duration,frequency,initialIntensity,i
             <div className="flex justify-center"><IntensityStepper value={intensity} onChange={setIntensity} disabled={remaining===0} large/></div>
           </div>
           <div className="flex gap-3">
-            <button onClick={()=>{setPaused(true);onPause({remaining,intensity,startTime,duration,frequency});}} disabled={remaining===0||paused} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2 disabled:opacity-40"><Pause className="w-4 h-4"/>Pause</button>
-            <button onClick={()=>onComplete(startTime,new Date(),false)} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:"#ef4444"}}><X className="w-4 h-4"/>End Session</button>
+            <button onClick={()=>{btSend("PAUSE\n");setPaused(true);onPause({remaining,intensity,startTime,duration,frequency});}} disabled={remaining===0||paused} className="flex-1 h-11 rounded-2xl border-2 border-gray-200 bg-white font-bold text-sm text-gray-600 flex items-center justify-center gap-2 disabled:opacity-40"><Pause className="w-4 h-4"/>Pause</button>
+            <button onClick={()=>{btSend("STOP\n");onComplete(startTime,new Date(),false);}} className="flex-1 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{background:"#ef4444"}}><X className="w-4 h-4"/>End Session</button>
           </div>
         </div></Card>
       </div>
@@ -1492,7 +1526,7 @@ function GuidesScreen({onBack,onNav,initialSection="menu",fromSession=false,onBa
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
-function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}){
+function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout,bt}){
   const [tab,setTab]=useState("profile");
   const [form,setForm]=useState(settings);
   const [saved,setSaved]=useState(false);
@@ -1513,7 +1547,7 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
       <div className="max-w-2xl mx-auto p-6 space-y-5">
         <div><h1 className="text-2xl font-black" style={{color:C.navy}}>Settings</h1><p className="text-sm text-gray-500">Manage profile and preferences</p></div>
         <div className="flex bg-gray-100 rounded-xl p-1">
-          {["profile","presets"].map(t=>(
+          {["profile","presets","device"].map(t=>(
             <button key={t} onClick={()=>setTab(t)} className={cn("flex-1 py-2.5 rounded-xl text-sm font-bold transition-all capitalize",tab===t?"bg-white shadow-sm text-gray-900":"text-gray-400")}>{t}</button>
           ))}
         </div>
@@ -1594,6 +1628,82 @@ function SettingsScreen({onNav,settings,onSave,presets,onUpdatePresets,onLogout}
             ):(
               <Card className="p-8 text-center"><Activity className="w-10 h-10 mx-auto mb-2" style={{color:"#e5e7eb"}}/><h3 className="font-bold text-sm mb-1 text-gray-600">No Presets Yet</h3><p className="text-xs text-gray-400">Create your first preset above.</p></Card>
             )}
+          </div>
+        )}
+
+        {tab==="device"&&(
+          <div className="space-y-4">
+            {/* Connection card */}
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0" style={{background:`linear-gradient(135deg,${C.cyan}20,${C.navy}20)`}}>
+                  <BluetoothIcon className="w-6 h-6" style={{color:C.navy}}/>
+                </div>
+                <div>
+                  <h3 className="font-black text-base" style={{color:C.navy}}>Arduino BLE Device</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Connects via Web Bluetooth (Chrome required)</p>
+                </div>
+              </div>
+
+              {bt?(
+                <>
+                  {/* Status row */}
+                  <div className="flex items-center justify-between p-3 rounded-xl mb-4" style={{background:bt.status==="connected"?"#e8faf4":bt.status==="error"?"#fef2f2":"#f8fafc",border:`1.5px solid ${bt.status==="connected"?"#4db89b":bt.status==="error"?"#ef4444":"#e5e7eb"}`}}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{background:bt.status==="connected"?"#4db89b":bt.status==="connecting"?"#f5a85a":bt.status==="error"?"#ef4444":"#94a3b8",boxShadow:bt.status==="connected"?"0 0 8px #4db89b80":"none"}}/>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">{bt.status==="connected"?(bt.deviceName||"Connected"):bt.status==="connecting"?"Searching for device…":bt.status==="error"?"Connection failed":"Not connected"}</p>
+                        {bt.status==="unsupported"&&<p className="text-[10px] text-gray-400 mt-0.5">Use Chrome on desktop or Android</p>}
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:"white",color:bt.status==="connected"?"#166534":bt.status==="error"?"#991b1b":"#64748b",border:`1px solid ${bt.status==="connected"?"#4db89b":bt.status==="error"?"#ef4444":"#e2e8f0"}`}}>{bt.status}</span>
+                  </div>
+
+                  {/* Connect / Disconnect button */}
+                  {bt.status!=="unsupported"&&(
+                    bt.status==="connected"?(
+                      <button onClick={bt.disconnect} className="w-full h-11 rounded-2xl border-2 font-bold text-sm flex items-center justify-center gap-2" style={{borderColor:"#fca5a5",color:"#dc2626",background:"white"}}>
+                        <BluetoothIcon className="w-4 h-4"/>Disconnect
+                      </button>
+                    ):(
+                      <button onClick={bt.connect} disabled={bt.status==="connecting"} className="w-full h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60" style={{background:`linear-gradient(135deg,${C.cyan},${C.navy})`,boxShadow:`0 4px 14px ${C.navy}30`}}>
+                        <BluetoothIcon className="w-4 h-4"/>{bt.status==="connecting"?"Connecting…":"Connect to Arduino"}
+                      </button>
+                    )
+                  )}
+
+                  {/* Last message from device */}
+                  {bt.lastMessage&&(
+                    <div className="mt-4 p-3 rounded-xl" style={{background:"#f8fafc",border:"1px solid #e2e8f0"}}>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Last message from device</p>
+                      <p className="text-sm font-mono text-gray-700">{bt.lastMessage}</p>
+                    </div>
+                  )}
+                </>
+              ):(
+                <p className="text-sm text-gray-400 text-center py-4">Bluetooth not available</p>
+              )}
+            </Card>
+
+            {/* Protocol reference */}
+            <Card className="p-5">
+              <h4 className="font-black text-sm mb-3" style={{color:C.navy}}>Arduino Command Protocol</h4>
+              <p className="text-xs text-gray-400 mb-3">The app sends these plain-text commands over BLE UART (Nordic UART Service). Read them in your Arduino sketch via <span className="font-mono bg-gray-100 px-1 rounded">Serial1</span> when using HM-10 / HC-08, or via the BLE UART library for ESP32.</p>
+              <div className="space-y-1.5">
+                {[
+                  ["START","Session started"],
+                  ["STOP","Session ended or completed"],
+                  ["PAUSE","Session paused"],
+                  ["I:5.0","Set intensity (0.0 – 10.0)"],
+                  ["F:10","Set frequency in Hz"],
+                ].map(([cmd,desc])=>(
+                  <div key={cmd} className="flex items-center gap-3 text-xs">
+                    <code className="font-mono font-bold px-2 py-0.5 rounded-lg shrink-0" style={{background:`${C.cyan}15`,color:C.cyanDark}}>{cmd}</code>
+                    <span className="text-gray-500">{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
           </div>
         )}
       </div>
@@ -1846,6 +1956,7 @@ function ReminderPopup({alarm,onDismiss,onStartSession,use24}){
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App(){
+  const bt=useBluetooth();
   const AUTH_STORAGE_KEY="pelvistim_auth_v1";
   const ACCOUNT_STORAGE_VERSION=2;
   const [screen,setScreen]=useState("welcome");
@@ -2204,7 +2315,7 @@ export default function App(){
 
       {activeReminder&&<ReminderPopup alarm={activeReminder} onDismiss={()=>setActiveReminder(null)} onStartSession={()=>{setActiveReminder(null);handleStartSession();}} use24={use24}/>}
 
-      {screen==="welcome"&&<WelcomeScreen onStartSession={handleStartSession} onResumeSession={()=>{if(pausedSession){setDuration(pausedSession.duration);setFrequency(pausedSession.frequency);setIntensity(pausedSession.intensity);setScreen("session-resume");}}} pausedSession={pausedSession} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} onOpenCalendar={()=>setScreen("calendar")} use24={use24} isTourActive={isTourActive} tourStep={tourStep}/>}
+      {screen==="welcome"&&<WelcomeScreen onStartSession={handleStartSession} onResumeSession={()=>{if(pausedSession){setDuration(pausedSession.duration);setFrequency(pausedSession.frequency);setIntensity(pausedSession.intensity);setScreen("session-resume");}}} pausedSession={pausedSession} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} onOpenCalendar={()=>setScreen("calendar")} use24={use24} isTourActive={isTourActive} tourStep={tourStep} bt={bt}/>}
       {screen==="calendar"&&<UnifiedCalendar onBack={()=>setScreen("welcome")} onNav={nav} sessions={sessions} diaryEntries={diaryEntries} use24={use24}/>}
       {screen==="schedule"&&<ScheduleScreen onNav={nav} alarms={alarms} onUpdateAlarms={setAlarms} use24={use24}/>}
       {screen==="diary"&&<DiaryScreen
@@ -2245,8 +2356,8 @@ export default function App(){
         onTourCustomEdit={handleTourCustomEdit}
         onTourStartSession={handleTourStartFromPreset}
       />}
-      {screen==="session"&&<SessionScreen onComplete={(s,e,complete)=>{setLastStart(s);setLastEnd(e);setSessions(p=>[...p,{timestamp:new Date(),complete}]);setPausedSession(null);setScreen("complete");}} onPause={ps=>{setPausedSession(ps);setScreen("welcome");}} duration={duration} frequency={frequency} initialIntensity={intensity} onNav={nav}/>}
-      {screen==="session-resume"&&pausedSession&&<SessionScreen onComplete={(s,e,complete)=>{setLastStart(s);setLastEnd(e);setSessions(p=>[...p,{timestamp:new Date(),complete}]);setPausedSession(null);setScreen("complete");}} onPause={ps=>{setPausedSession(ps);setScreen("welcome");}} duration={pausedSession.duration} frequency={pausedSession.frequency} initialIntensity={pausedSession.intensity} initialRemaining={pausedSession.remaining} onNav={nav}/>}
+      {screen==="session"&&<SessionScreen onComplete={(s,e,complete)=>{setLastStart(s);setLastEnd(e);setSessions(p=>[...p,{timestamp:new Date(),complete}]);setPausedSession(null);setScreen("complete");}} onPause={ps=>{setPausedSession(ps);setScreen("welcome");}} duration={duration} frequency={frequency} initialIntensity={intensity} onNav={nav} btSend={bt.sendCommand}/>}
+      {screen==="session-resume"&&pausedSession&&<SessionScreen onComplete={(s,e,complete)=>{setLastStart(s);setLastEnd(e);setSessions(p=>[...p,{timestamp:new Date(),complete}]);setPausedSession(null);setScreen("complete");}} onPause={ps=>{setPausedSession(ps);setScreen("welcome");}} duration={pausedSession.duration} frequency={pausedSession.frequency} initialIntensity={pausedSession.intensity} initialRemaining={pausedSession.remaining} onNav={nav} btSend={bt.sendCommand}/>}
       {screen==="complete"&&<CompleteScreen onHome={()=>setScreen("welcome")} startTime={lastStart} endTime={lastEnd} onNav={nav} use24={use24}/>}
 
       {/* Guides accessed from main nav — normal back behavior */}
@@ -2272,7 +2383,7 @@ export default function App(){
         onBackToSession={()=>setScreen("precheck")}
       />}
 
-      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout}/>}
+      {screen==="settings"&&<SettingsScreen onNav={nav} settings={settings} onSave={handleSaveSettings} presets={presets} onUpdatePresets={setPresets} onLogout={handleLogout} bt={bt}/>}
       {tourStep!==null&&<IntroCoachmark
         step={tourStep}
         total={10}
